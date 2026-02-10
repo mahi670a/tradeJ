@@ -61,12 +61,14 @@ input:focus {
     background: #35355c;
     box-shadow: 0 0 10px rgba(0,255,224,0.3);
 }
+
+/* دکمه‌های ریسک */
 .risk-buttons {
     display: flex;
     justify-content: space-between;
     margin-top: 5px;
 }
-.risk-btn, .reset-btn {
+.risk-btn, .reset-btn, .back-btn {
     flex: 1;
     padding: 10px;
     border-radius: 10px;
@@ -83,13 +85,36 @@ input:focus {
 }
 .risk-btn:last-child { margin-right: 0; }
 .risk-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,140,66,0.4); }
+
+/* دکمه‌های پایینی */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
 .reset-btn {
     background: linear-gradient(135deg, #ff4c4c, #ff6a6a);
     color: #fff;
-    margin-top: 15px;
-    width: 100%;
+    flex: 1;
 }
 .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,76,76,0.4); }
+
+/* دکمه برگشت به ژورنال */
+.back-btn {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+}
+.back-btn:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
+
 .row { display: flex; gap: 10px; }
 .row input { flex: 1; }
 
@@ -181,7 +206,17 @@ input:focus {
         <input type="number" id="rr" value="3" step="0.1">
         <label>Leverage:</label>
         <input type="number" id="leverage" value="5" step="1" min="1">
-        <button class="reset-btn" onclick="resetAll()"> Clear </button>
+        
+        <!-- دکمه‌های پایینی - کنار هم -->
+        <div class="button-group">
+            <button class="reset-btn" onclick="resetAll()"> 
+                ❌ Clear 
+            </button>
+            <!-- دکمه برگشت به ژورنال -->
+            <button class="back-btn" onclick="window.location.href='../'">
+                ← بازگشت به ژورنال
+            </button>
+        </div>
     </div>
 
     <div class="results">
