@@ -11,8 +11,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Safari macOS favicon -->
-    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="96x96" href="./icons/favicon-96x96.png">
+    <link rel="icon" type="image/svg+xml" href="../../icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="../../icons/favicon-96x96.png">
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
 
     <!-- Safari theme -->
     <meta name="theme-color" content="#0f172a">
@@ -690,14 +693,7 @@
         
         // تابع بازگشت به ژورنال
         function goToJournal() {
-            // تلاش برای بازگشت به صفحه اصلی
-            // اگر در پوشه calculator هستیم، یک سطح بالا می‌رویم
-            if (window.location.pathname.includes('/calculator/')) {
-                window.location.href = '../';
-            } else {
-                // اگر فایل مستقیما باز شده، به صفحه اصلی سایت برمی‌گردیم
-                window.location.href = './journal.html'; // یا آدرس اصلی ژورنال
-            }
+            window.location.href = '../index.html';
         }
         
         // نمایش اعلان
