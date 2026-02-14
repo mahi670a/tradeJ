@@ -1,1 +1,2899 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Journal</title>
 
+    <!-- Apple Web App Mode -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Crypto Journal">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Apple Touch Icon (اصلی و مهم) -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <!-- Safari macOS favicon -->
+    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="./icons/favicon-96x96.png">
+
+    <!-- Safari theme -->
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* بدنه اصلی با عرض ثابت */
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        /* کانتینر اصلی با عرض ثابت */
+        .container {
+            width: 1400px;
+            background-color: rgba(30, 41, 59, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border: 1px solid #334155;
+            transform-origin: top center;
+        }
+        
+        /* استایل برای تغییر مقیاس خودکار بر اساس عرض صفحه */
+        @media (max-width: 1399px) {
+            .container {
+                transform: scale(calc(100vw / 1400));
+                transform-origin: top center;
+                margin: 20px 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                transform: scale(0.55);
+                transform-origin: top center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                transform: scale(0.4);
+                transform-origin: top center;
+            }
+        }
+        
+        /* ========== هدر اصلی ========== */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3b82f6;
+            position: relative;
+            padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 30%;
+            width: 40%;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .header-title {
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #60a5fa;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+        
+        /* دکمه ماشین حساب در هدر */
+        .calculator-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 140px;
+            justify-content: center;
+            margin-left: 20px;
+        }
+        
+        .calculator-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* ========== بخش بالانس حساب ========== */
+        .balance-container {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid #475569;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .balance-main {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .balance-icon {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .balance-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .balance-title {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .balance-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #10b981;
+        }
+        
+        .balance-details {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .balance-detail {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .detail-label {
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        
+        .balance-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .balance-btn {
+            padding: 10px 16px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 8px;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .balance-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .balance-btn.active {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+        
+        /* استایل برای مودال‌ها - فیکس شده */
+        .modal-box {
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: 12px;
+            border: 1px solid #475569;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            padding: 0 25px;
+            border-width: 0;
+            margin: 0;
+        }
+        
+        .modal-box.active {
+            max-height: 800px;
+            opacity: 1;
+            transform: translateY(0);
+            padding: 25px;
+            border-width: 1px;
+            margin-top: 15px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #475569;
+        }
+        
+        .modal-title {
+            color: #60a5fa;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-close {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-label {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .modal-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+        }
+        
+        .modal-btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .modal-btn-secondary {
+            background-color: #475569;
+            color: #e2e8f0;
+        }
+        
+        .modal-btn-secondary:hover {
+            background-color: #64748b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);
+        }
+        
+        .modal-btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .modal-btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* استایل برای مدیریت حساب */
+        .accounts-list-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            padding: 10px;
+            background-color: rgba(15, 23, 42, 0.5);
+        }
+        
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #475569;
+            transition: all 0.2s;
+        }
+        
+        .account-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .account-item:last-child {
+            border-bottom: none;
+        }
+        
+        .account-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .account-name {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        
+        .account-balance {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .account-action-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .account-action-btn:hover {
+            color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .account-action-btn.delete:hover {
+            color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        
+        .active-account {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+        }
+        
+        .active-badge {
+            background-color: #10b981;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+        
+        /* استایل برای preset buttons */
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .preset-btn {
+            padding: 8px 5px;
+            background: rgba(71, 85, 105, 0.3);
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .preset-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        
+        .current-balance-display {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .current-balance-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .current-balance-value {
+            color: #10b981;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        /* ========== بخش‌های دیگر ========== */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .section {
+            background-color: rgba(15, 23, 42, 0.7);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #475569;
+        }
+        
+        .section-title {
+            color: #60a5fa;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #475569;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ========== فرم معاملات ========== */
+        .trade-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input, select {
+            padding: 12px;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            transition: all 0.3s;
+            height: 44px;
+        }
+        
+        input[type="text"] {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            text-align: left;
+            direction: ltr;
+            font-size: 0.95rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* بخش قیمت‌ها */
+        .prices-section {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(71, 85, 105, 0.3);
+        }
+        
+        .prices-title {
+            color: #60a5fa;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .prices-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .price-display {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            direction: ltr;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        
+        /* دکمه‌های سریع ریسک */
+        .quick-risk-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .quick-risk-btn {
+            padding: 8px 12px;
+            background-color: rgba(71, 85, 105, 0.5);
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+            min-height: 36px;
+        }
+        
+        .quick-risk-btn:hover {
+            background-color: #64748b;
+            transform: translateY(-2px);
+        }
+        
+        /* خلاصه ریسک */
+        .risk-summary-section {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(71, 85, 105, 0.3);
+        }
+        
+        .risk-summary-title {
+            color: #60a5fa;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .risk-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .risk-summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+        
+        .risk-summary-label {
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+        
+        .risk-summary-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        /* کارمزد */
+        .fee-info-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 15px;
+        }
+        
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .fee-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding-top: 10px;
+            border-top: 1px solid rgba(245, 158, 11, 0.3);
+            margin-top: 10px;
+        }
+        
+        .fee-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        
+        /* دکمه‌های فرم */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 44px;
+            min-width: 140px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #475569;
+            color: #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #64748b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(71, 85, 105, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+        
+        /* ========== بخش تاریخچه معاملات ========== */
+        .trades-table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            margin-top: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+            direction: ltr;
+        }
+        
+        .trades-table th {
+            background: linear-gradient(135deg, #1e40af, #3730a3);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #3b82f6;
+            font-size: 0.9rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .trades-table td {
+            padding: 12px;
+            border-bottom: 1px solid #475569;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        
+        .trades-table tr:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .profit {
+            color: #10b981;
+            font-weight: 700;
+            background-color: rgba(16, 185, 129, 0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .loss {
+            color: #ef4444;
+            font-weight: 700;
+            background-color: rgba(239, 68, 68, 0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .neutral {
+            color: #94a3b8;
+            font-weight: 700;
+            background-color: rgba(148, 163, 184, 0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+        
+        .crypto-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(16, 185, 129, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #10b981;
+        }
+        
+        .crypto-badge i {
+            color: #10b981;
+        }
+        
+        /* ========== دکمه‌های عملیات بزرگتر و خوانا‌تر ========== */
+        .actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+            min-width: 200px; /* افزایش عرض مینیمم */
+        }
+        
+        .btn-icon {
+            padding: 8px 12px; /* افزایش پدینگ */
+            border-radius: 8px; /* گردی بیشتر گوشه‌ها */
+            font-size: 0.9rem; /* افزایش سایز فونت */
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 36px; /* افزایش ارتفاع */
+            width: 36px; /* افزایش عرض */
+            min-width: 36px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* اضافه کردن سایه */
+        }
+        
+        .btn-icon i {
+            font-size: 1rem; /* افزایش سایز آیکون */
+        }
+        
+        .btn-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* اضافه کردن tooltip ساده با CSS */
+        .btn-icon {
+            position: relative;
+        }
+        
+        .btn-icon:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -30px;
+            background: #1e293b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            border: 1px solid #475569;
+            z-index: 100;
+        }
+        
+        .btn-icon:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-icon:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-icon:disabled:hover::after {
+            display: none;
+        }
+        
+        /* ========== بخش آمار عملکرد ========== */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #475569;
+            min-height: 95px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            opacity: 0.7;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            border-color: #60a5fa;
+        }
+        
+        .stat-icon {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            opacity: 0.7;
+            color: #94a3b8;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 5px 0;
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+        
+        /* رنگ‌بندی */
+        .positive {
+            color: #10b981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .negative {
+            color: #ef4444;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .neutral-stat {
+            color: #94a3b8;
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.05));
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .fee-stat {
+            color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        /* ========== بخش پشتیبان‌گیری ========== */
+        .backup-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .backup-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .backup-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            color: #60a5fa;
+            font-size: 1.05rem;
+        }
+        
+        .backup-description {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-backup {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-backup:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* مودال جزئیات معامله */
+        .details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 9999;
+            display: none;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease-out;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .details-modal-content {
+            max-width: 500px;
+            animation: modalSlideUp 0.4s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            margin-top: 50px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid #475569;
+            width: 90%;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 12px;
+        }
+        
+        .detail-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px;
+            background-color: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+            border: 1px solid #475569;
+        }
+        
+        .detail-value.price {
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            text-align: right;
+        }
+        
+        .detail-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #475569;
+        }
+        
+        .detail-section-title {
+            color: #60a5fa;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .details-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- مودال جزئیات معامله -->
+    <div id="detailsModal" class="details-modal">
+        <div class="details-modal-content">
+            <h3 style="color: #60a5fa; margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-chart-line"></i>
+                جزئیات معامله
+            </h3>
+            
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">ارز دیجیتال</span>
+                    <div class="detail-value" id="detail-symbol">BTC</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">نوع معامله</span>
+                    <div class="detail-value" id="detail-type">لانگ</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">تاریخ معامله</span>
+                    <div class="detail-value" id="detail-date">1402/10/15 - 14:30</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">وضعیت</span>
+                    <div class="detail-value" id="detail-status">باز</div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <div class="detail-section-title">
+                    <i class="fas fa-chart-area"></i>
+                    قیمت‌ها
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">قیمت ورود</span>
+                        <div class="detail-value price" id="detail-entry">90075</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">حد ضرر</span>
+                        <div class="detail-value price" id="detail-sl">89861</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">حد سود</span>
+                        <div class="detail-value price" id="detail-tp">90715</div>
+                    </div>
+                    
+                    <div class="detail-item" id="detail-closed-price-container" style="display: none;">
+                        <span class="detail-label">قیمت بسته شدن</span>
+                        <div class="detail-value price" id="detail-closed-price">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <div class="detail-section-title">
+                    <i class="fas fa-calculator"></i>
+                    محاسبات ریسک
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">ریسک (% از بالانس)</span>
+                        <div class="detail-value" id="detail-risk-percent">0.5%</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">مقدار ریسک ($)</span>
+                        <div class="detail-value" id="detail-risk-amount" style="color: #ef4444;">$7.50</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">اندازه پوزیشن</span>
+                        <div class="detail-value" id="detail-position-size">0.0234</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">ریسک به ریوارد</span>
+                        <div class="detail-value" id="detail-rr">1:1.5</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section" id="detail-fee-section">
+                <div class="detail-section-title">
+                    <i class="fas fa-receipt"></i>
+                    کارمزد
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">کارمزد ورود</span>
+                        <div class="detail-value" id="detail-fee-entry" style="color: #f59e0b;">$0.00</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">کارمزد خروج</span>
+                        <div class="detail-value" id="detail-fee-exit" style="color: #f59e0b;">$0.00</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">کل کارمزد</span>
+                        <div class="detail-value" id="detail-total-fee" style="color: #f59e0b; font-weight: 700;">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section" id="detail-result-section" style="display: none;">
+                <div class="detail-section-title">
+                    <i class="fas fa-coins"></i>
+                    نتیجه معامله
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">سود/ضرر خام</span>
+                        <div class="detail-value" id="detail-gross-pnl">+$12.50</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">کارمزد کسر شده</span>
+                        <div class="detail-value" id="detail-fee-deducted" style="color: #f59e0b;">$0.00</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">سود/ضرر خالص</span>
+                        <div class="detail-value" id="detail-net-pnl">+$12.50</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">تاریخ بسته شدن</span>
+                        <div class="detail-value" id="detail-closed-date">1402/10/16 - 09:45</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-modal-buttons">
+                <button type="button" class="btn-secondary" onclick="closeDetailsModal()" style="flex: 1;">
+                    <i class="fas fa-times"></i> بستن
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <!-- دکمه ماشین‌حساب -->
+                <button class="calculator-btn" onclick="window.location.href='calculator/'" title="رفتن به ماشین‌حساب">
+                    <i class="fas fa-calculator"></i>
+                    ماشین‌حساب
+                </button>
+                
+                <div class="header-title">
+                    <h1>
+                        <i class="fa-solid fa-coins"></i>
+                          Crypto Journal
+                    </h1>
+                    <p class="subtitle">R-NIKER</p>
+                </div>
+                
+                <!-- اینجا فضای خالی برای تراز کردن -->
+                <div style="width: 140px;"></div>
+            </div>
+        </header>
+        
+        <!-- بخش بالانس حساب -->
+        <div class="balance-container">
+            <div class="balance-main">
+                <div class="balance-icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="balance-info">
+                    <div class="balance-title">موجودی حساب</div>
+                    <div class="balance-value" id="currentBalance">$1,500</div>
+                    <div id="currentAccountName" style="color: #94a3b8; font-size: 0.8rem; margin-top: 5px;">حساب اصلی</div>
+                </div>
+            </div>
+            
+            <div class="balance-details">
+                <div class="balance-detail">
+                    <div class="detail-label">سود/ضرر کل</div>
+                    <div class="detail-value" id="totalPnL" style="color: #10b981;">$0</div>
+                </div>
+                <div class="balance-detail">
+                    <div class="detail-label">ریسک کل</div>
+                    <div class="detail-value" id="totalRiskPercent">0%</div>
+                </div>
+                <div class="balance-detail">
+                    <div class="detail-label">حساب فعال</div>
+                    <div class="detail-value" id="activeAccountIndicator" style="color: #3b82f6;">1/1</div>
+                </div>
+            </div>
+            
+            <div class="balance-actions">
+                <button class="balance-btn" id="editBalanceBtn" onclick="toggleModal('balanceModal')">
+                    <i class="fas fa-edit"></i>
+                    ویرایش بالانس
+                </button>
+                <button class="balance-btn" id="manageAccountsBtn" onclick="toggleModal('accountModal')">
+                    <i class="fas fa-university"></i>
+                    مدیریت حساب
+                </button>
+            </div>
+        </div>
+        
+        <!-- مودال ویرایش بالانس -->
+        <div id="balanceModal" class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-edit"></i> ویرایش بالانس حساب
+                </h3>
+                <div class="modal-close" onclick="toggleModal('balanceModal')">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            
+            <div class="modal-grid">
+                <div class="modal-input-group">
+                    <label class="modal-label">
+                        <i class="fas fa-wallet"></i>
+                        مبلغ جدید (دلار)
+                    </label>
+                    <input type="number" id="newBalanceInput" class="modal-input" placeholder="1000" step="0.01" min="0" value="1000">
+                </div>
+            </div>
+            
+            <div class="preset-buttons">
+                <button type="button" class="preset-btn" onclick="setBalancePreset(2000)">$2,000</button>
+                <button type="button" class="preset-btn" onclick="setBalancePreset(5000)">$5,000</button>
+                <button type="button" class="preset-btn" onclick="setBalancePreset(10000)">$10,000</button>
+            </div>
+            
+            <div class="current-balance-display">
+                <span class="current-balance-label">موجودی فعلی:</span>
+                <span class="current-balance-value" id="currentBalanceDisplay">$1,500</span>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="toggleModal('balanceModal')">
+                    <i class="fas fa-times"></i> لغو
+                </button>
+                <button type="button" class="modal-btn modal-btn-success" onclick="updateBalance()">
+                    <i class="fas fa-save"></i> ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+        
+        <!-- مودال مدیریت حساب -->
+        <div id="accountModal" class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-university"></i> مدیریت حساب‌ها
+                </h3>
+                <div class="modal-close" onclick="toggleModal('accountModal')">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            
+            <div class="accounts-list-container" id="accountsListContainer">
+                <!-- حساب‌ها در اینجا نمایش داده می‌شوند -->
+            </div>
+            
+            <div class="modal-grid">
+                <div class="modal-input-group">
+                    <label class="modal-label">
+                        <i class="fas fa-signature"></i>
+                        نام حساب جدید
+                    </label>
+                    <input type="text" id="newAccountName" class="modal-input" placeholder="مثلا: حساب اصلی">
+                </div>
+                
+                <div class="modal-input-group">
+                    <label class="modal-label">
+                        <i class="fas fa-money-bill-wave"></i>
+                        موجودی اولیه (دلار)
+                    </label>
+                    <input type="number" id="newAccountBalance" class="modal-input" placeholder="1000" step="0.01" min="0" value="1000">
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="toggleModal('accountModal')">
+                    <i class="fas fa-times"></i> بستن
+                </button>
+                <button type="button" class="modal-btn modal-btn-success" onclick="addNewAccount()">
+                    <i class="fas fa-plus"></i> افزودن حساب جدید
+                </button>
+            </div>
+        </div>
+        
+        <main class="main-content">
+            <!-- بخش ثبت معامله -->
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-plus-circle"></i> ثبت معامله جدید</h2>
+                <form id="tradeForm" class="trade-form">
+                    <!-- اطلاعات اولیه -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="symbol"><i class="fas fa-coins"></i> ارز دیجیتال</label>
+                            <input type="text" id="symbol" list="crypto-list" placeholder="مثال: BTC" required>
+                            <datalist id="crypto-list">
+                                <option value="BTC">بیت‌کوین</option>
+                                <option value="ETH">اتریوم</option>
+                                <option value="BNB">بایننس کوین</option>
+                                <option value="SOL">سولانا</option>
+                                <option value="ARB">آربیتروم</option>
+                                <option value="ENA">ای اتنا</option>
+                                <option value="ADA">کاردانو</option>
+                                <option value="OP">آپتیمیسم</option>
+                            </datalist>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date"><i class="fas fa-calendar"></i> تاریخ معامله</label>
+                            <input type="datetime-local" id="date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="type"><i class="fas fa-exchange-alt"></i> نوع معامله</label>
+                            <select id="type" required>
+                                <option value="" disabled selected>انتخاب کنید</option>
+                                <option value="buy">لانگ (خرید)</option>
+                                <option value="sell">شورت (فروش)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- بخش قیمت‌ها -->
+                    <div class="prices-section">
+                        <div class="prices-title">
+                            <i class="fas fa-chart-line"></i>
+                            قیمت‌های معامله
+                        </div>
+                        
+                        <div class="prices-grid">
+                            <div class="form-group">
+                                <label><i class="fas fa-arrow-down"></i> قیمت ورود</label>
+                                <input type="text" id="entryPrice" placeholder="مثال: 66322" required class="price-display">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-shield-alt"></i> حد ضرر</label>
+                                <input type="text" id="stopLoss" placeholder="مثال: 65987" required class="price-display">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-bullseye"></i> حد سود</label>
+                                <input type="text" id="takeProfit" placeholder="مثال: 66850" required class="price-display">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- تنظیمات ریسک -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="riskPercent"><i class="fas fa-percentage"></i> ریسک (% از بالانس)</label>
+                            <input type="text" id="riskPercent" placeholder="مثال: 0.5" required>
+                            <div class="quick-risk-buttons">
+                                <button type="button" class="quick-risk-btn" onclick="setRiskPercent(0.25)">0.25%</button>
+                                <button type="button" class="quick-risk-btn" onclick="setRiskPercent(0.5)">0.5%</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="feePercent"><i class="fas fa-receipt"></i> کارمزد هر تراکنش (%)</label>
+                            <input type="text" id="feePercent" placeholder="مثال: 0.04" required class="price-display">
+                            <div class="fee-info">
+                                <i class="fas fa-info-circle"></i>
+                                کارمزد ورود و خروج از ریسک اصلی کسر می‌شود
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- خلاصه ریسک -->
+                    <div class="risk-summary-section">
+                        <div class="risk-summary-title">
+                            <i class="fas fa-calculator"></i>
+                            خلاصه ریسک
+                        </div>
+                        
+                        <div class="risk-summary">
+                            <div class="risk-summary-item">
+                                <span class="risk-summary-label">(مقدار ریسک)</span>
+                                <span class="risk-summary-value" id="riskAmount" style="color: #ef4444;">$0</span>
+                            </div>
+                            <div class="risk-summary-item">
+                                <span class="risk-summary-label">سود</span>
+                                <span class="risk-summary-value" id="potentialProfit" style="color: #10b981;">$0</span>
+                            </div>
+                            <div class="risk-summary-item">
+                                <span class="risk-summary-label">ریسک به ریوارد</span>
+                                <span class="risk-summary-value" id="riskRewardRatio">1:0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- جزئیات کارمزد -->
+                        <div class="fee-info-box" id="feeDetails" style="display: none;">
+                            <div class="fee-row">
+                                <span>کارمزد ورود:</span>
+                                <span id="feeEntryAmount" style="color: #f59e0b;">$0.00</span>
+                            </div>
+                            <div class="fee-row">
+                                <span>کارمزد خروج:</span>
+                                <span id="feeExitAmount" style="color: #f59e0b;">$0.00</span>
+                            </div>
+                            <div class="fee-total">
+                                <span>کل کارمزد:</span>
+                                <span id="totalFeeAmount" style="color: #f59e0b;">$0.00</span>
+                            </div>
+                            <div class="fee-row" style="margin-top: 10px;">
+                                <span>سود خالص (پس از کارمزد):</span>
+                                <span id="netProfitAmount" style="color: #10b981; font-weight: 600;">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- دکمه‌های عملیات -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> ثبت معامله
+                        </button>
+                        <button type="reset" class="btn-secondary" onclick="resetForm()">
+                            <i class="fas fa-eraser"></i> پاک کردن
+                        </button>
+                        <button type="button" class="btn-warning" onclick="calculateRisk()">
+                            <i class="fas fa-calculator"></i> محاسبه
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <!-- بخش تاریخچه معاملات -->
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-history"></i> تاریخچه معاملات</h2>
+                <div class="trades-table-container">
+                    <table class="trades-table">
+                        <thead>
+                            <tr>
+                                <th>ارز</th>
+                                <th>تاریخ</th>
+                                <th>نوع</th>
+                                <th>ورود</th>
+                                <th>حد ضرر</th>
+                                <th>حد سود</th>
+                                <th>ریسک %</th>
+                                <th>کارمزد</th>
+                                <th>وضعیت</th>
+                                <th>سود/ضرر</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTableBody">
+                            <!-- معاملات اینجا نمایش داده می‌شوند -->
+                        </tbody>
+                    </table>
+                </div>
+                <p id="noTradesMessage" style="text-align: center; padding: 30px; color: #94a3b8; display: none;">
+                    <i class="fas fa-exchange-alt" style="font-size: 2rem; margin-bottom: 15px; display: block;"></i>
+                    هنوز هیچ معامله‌ای ثبت نشده است!
+                </p>
+            </section>
+            
+            <!-- بخش آمار و تحلیل -->
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i> آمار عملکرد</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+                        <div class="stat-label">تعداد معاملات</div>
+                        <div class="stat-value neutral-stat" id="totalTrades">0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+                        <div class="stat-label">سود کل</div>
+                        <div class="stat-value positive" id="totalProfit">$0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+                        <div class="stat-label">ضرر کل</div>
+                        <div class="stat-value negative" id="totalLoss">$0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+                        <div class="stat-label">نرخ موفقیت</div>
+                        <div class="stat-value neutral-stat" id="winRate">0%</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="stat-label">کارمزد کل</div>
+                        <div class="stat-value fee-stat" id="totalFees">$0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-label">بیشترین سود</div>
+                        <div class="stat-value positive" id="maxProfit">$0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-label">بیشترین ضرر</div>
+                        <div class="stat-value negative" id="maxLoss">$0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-label">معاملات باز</div>
+                        <div class="stat-value neutral-stat" id="openTrades">0</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- بخش پشتیبان‌گیری -->
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-database"></i> پشتیبان‌گیری و بازیابی</h2>
+                <div class="backup-container">
+                    <div class="backup-card">
+                        <div class="backup-header">
+                            <i class="fas fa-download"></i>
+                            <h3>دریافت پشتیبان</h3>
+                        </div>
+                        <p class="backup-description">
+                            تمام معاملات و اطلاعات حساب خود را در یک فایل ذخیره کنید. این فایل شامل تمام تاریخچه معاملات، بالانس حساب و تنظیمات است.
+                        </p>
+                        <button class="btn-backup" onclick="exportData()">
+                            <i class="fas fa-file-export"></i> دانلود پشتیبان
+                        </button>
+                    </div>
+                    
+                    <div class="backup-card">
+                        <div class="backup-header">
+                            <i class="fas fa-upload"></i>
+                            <h3>بارگذاری پشتیبان</h3>
+                        </div>
+                        <p class="backup-description">
+                            اطلاعات قبلی خود را از فایل بازیابی کنید. توجه: این عملیات اطلاعات فعلی را جایگزین می‌کند.
+                        </p>
+                        <input type="file" id="backupFile" class="file-input" accept=".json">
+                        <button class="btn-backup" onclick="importData()">
+                            <i class="fas fa-file-import"></i> بارگذاری پشتیبان
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #475569; color: #94a3b8; font-size: 0.85rem;">
+            <p>Support : ID Telegram : @RNA7600</p>
+        </footer>
+    </div>
+
+    <script>
+        // ============================
+        // بخش مدیریت ژورنال تریدینگ
+        // ============================
+        
+        // مدیریت داده‌ها
+        let accounts = JSON.parse(localStorage.getItem('crypto_accounts')) || [
+            { id: 1, name: 'حساب اصلی', balance: 1500 }
+        ];
+        
+        let activeAccountId = parseInt(localStorage.getItem('crypto_active_account_id')) || 1;
+        let activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+        let accountBalance = activeAccount ? activeAccount.balance : 1500;
+        
+        let trades = JSON.parse(localStorage.getItem('crypto_trades')) || [];
+        
+        // بارگذاری اولیه
+        document.addEventListener('DOMContentLoaded', function() {
+            // تنظیم تاریخ و زمان فعلی
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
+            document.getElementById('date').value = localISOTime;
+            
+            // نمایش بالانس و ریسک
+            updateBalanceDisplay();
+            updateTotalRisk();
+            
+            // بارگذاری معاملات
+            loadTrades();
+            updateStats();
+            
+            // محاسبه ریسک هنگام تغییر ورودی‌ها
+            document.getElementById('entryPrice').addEventListener('input', calculateRisk);
+            document.getElementById('stopLoss').addEventListener('input', calculateRisk);
+            document.getElementById('takeProfit').addEventListener('input', calculateRisk);
+            document.getElementById('riskPercent').addEventListener('input', calculateRisk);
+            document.getElementById('feePercent').addEventListener('input', calculateRisk);
+            
+            // تنظیم مقیاس دینامیک
+            adjustScale();
+            window.addEventListener('resize', adjustScale);
+            window.addEventListener('load', adjustScale);
+            
+            // بارگذاری لیست حساب‌ها
+            updateAccountsList();
+            
+            // رویداد تغییر ورودی بالانس
+            document.getElementById('newBalanceInput').addEventListener('input', function() {
+                const value = parseFloat(this.value);
+                if (!isNaN(value) && value > 0) {
+                    this.value = Math.round(value * 100) / 100;
+                }
+            });
+            
+            // رویداد تغییر ورودی حساب جدید
+            document.getElementById('newAccountBalance').addEventListener('input', function() {
+                const value = parseFloat(this.value);
+                if (!isNaN(value) && value > 0) {
+                    this.value = Math.round(value * 100) / 100;
+                }
+            });
+            
+            // بستن مودال جزئیات با کلیک روی پس‌زمینه
+            const detailsModal = document.getElementById('detailsModal');
+            if (detailsModal) {
+                detailsModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeDetailsModal();
+                    }
+                });
+            }
+        });
+        
+        // ==================== تابع مدیریت مودال‌ها ====================
+        let activeModal = null;
+        
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const btn = document.getElementById(modalId.replace('Modal', 'Btn'));
+            
+            // اگر مودالی فعال است و با مودال فعلی یکی نیست، آن را ببند
+            if (activeModal && activeModal !== modal) {
+                activeModal.classList.remove('active');
+                const activeBtn = document.getElementById(activeModal.id.replace('Modal', 'Btn'));
+                if (activeBtn) {
+                    activeBtn.classList.remove('active');
+                }
+            }
+            
+            // نمایش یا مخفی کردن مودال فعلی
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                if (btn) btn.classList.remove('active');
+                activeModal = null;
+            } else {
+                modal.classList.add('active');
+                if (btn) btn.classList.add('active');
+                activeModal = modal;
+                
+                // مقداردهی اولیه فرم‌ها
+                if (modalId === 'balanceModal') {
+                    document.getElementById('newBalanceInput').value = accountBalance;
+                }
+            }
+        }
+        
+        // بستن همه مودال‌ها
+        function closeAllModals() {
+            const modals = document.querySelectorAll('.modal-box');
+            const buttons = document.querySelectorAll('.balance-btn');
+            
+            modals.forEach(modal => {
+                modal.classList.remove('active');
+            });
+            
+            buttons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            activeModal = null;
+        }
+        
+        // تنظیم مقدار پیش‌فرض بالانس
+        function setBalancePreset(amount) {
+            document.getElementById('newBalanceInput').value = amount;
+        }
+        
+        // تابع تنظیم مقیاس دینامیک
+        function adjustScale() {
+            const container = document.querySelector('.container');
+            const containerWidth = 1400;
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // محاسبه مقیاس بر اساس عرض پنجره
+            let scale = windowWidth / containerWidth;
+            
+            // محدود کردن مقیاس بین 0.35 تا 1
+            scale = Math.max(0.35, Math.min(1, scale));
+            
+            // اعمال transform
+            container.style.transform = `scale(${scale})`;
+            container.style.transformOrigin = 'top center';
+            
+            // محاسبه ارتفاع جدید برای بدنه
+            const containerHeight = container.offsetHeight;
+            const scaledHeight = containerHeight * scale;
+            const minBodyHeight = Math.max(windowHeight, scaledHeight + 40);
+            
+            document.body.style.minHeight = `${minBodyHeight}px`;
+        }
+        
+        // نمایش بالانس در بخش جدید
+        function updateBalanceDisplay() {
+            document.getElementById('currentBalance').textContent = '$' + formatNumber(accountBalance);
+            document.getElementById('currentBalanceDisplay').textContent = '$' + formatNumber(accountBalance);
+            document.getElementById('currentAccountName').textContent = activeAccount.name;
+            
+            // به‌روزرسانی نشانگر حساب فعال
+            const activeAccountIndicator = document.getElementById('activeAccountIndicator');
+            activeAccountIndicator.textContent = `${accounts.findIndex(acc => acc.id === activeAccountId) + 1}/${accounts.length}`;
+        }
+        
+        // فرمت ارز برای سود/ضرر
+        function formatCurrency(num) {
+            return '$' + parseFloat(num).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+        
+        // فرمت اعداد برای نمایش عمومی
+        function formatNumber(num) {
+            const numValue = parseFloat(num);
+            if (numValue % 1 !== 0) {
+                return numValue.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 8
+                });
+            }
+            return numValue.toLocaleString('en-US');
+        }
+        
+        // به‌روزرسانی ریسک کل
+        function updateTotalRisk() {
+            const openTrades = trades.filter(t => t.status === 'open');
+            let totalRiskAmount = 0;
+            
+            openTrades.forEach(trade => {
+                const riskData = calculateTradeRisk(trade);
+                if (riskData.riskAmount) {
+                    totalRiskAmount += riskData.riskAmount;
+                }
+            });
+            
+            const totalRiskPercent = accountBalance > 0 ? (totalRiskAmount / accountBalance) * 100 : 0;
+            
+            document.getElementById('totalRiskPercent').textContent = totalRiskPercent.toFixed(2) + '%';
+            
+            // محاسبه سود/ضرر کل
+            const totalPnL = calculateTotalPnL();
+            const totalPnLElement = document.getElementById('totalPnL');
+            totalPnLElement.textContent = (totalPnL >= 0 ? '+' : '') + formatCurrency(Math.abs(totalPnL));
+            totalPnLElement.style.color = totalPnL >= 0 ? '#10b981' : '#ef4444';
+        }
+        
+        // تنظیم درصد ریسک
+        function setRiskPercent(percent) {
+            document.getElementById('riskPercent').value = percent;
+            calculateRisk();
+        }
+        
+        // به‌روزرسانی بالانس حساب
+        function updateBalance() {
+            const newBalanceInput = document.getElementById('newBalanceInput');
+            let newBalance = parseFloat(newBalanceInput.value);
+            
+            newBalance = Math.round(newBalance * 100) / 100;
+            
+            if (!isNaN(newBalance) && newBalance > 0) {
+                // به‌روزرسانی حساب فعال
+                const activeAccountIndex = accounts.findIndex(acc => acc.id === activeAccountId);
+                if (activeAccountIndex !== -1) {
+                    accounts[activeAccountIndex].balance = newBalance;
+                    activeAccount = accounts[activeAccountIndex];
+                    accountBalance = newBalance;
+                    saveAccounts();
+                }
+                
+                updateBalanceDisplay();
+                updateTotalRisk();
+                updateStats();
+                calculateRisk();
+                closeAllModals();
+                showNotification('بالانس حساب به‌روزرسانی شد.', 'success');
+            } else {
+                showNotification('لطفاً یک عدد معتبر وارد کنید.', 'error');
+            }
+        }
+        
+        // پاک کردن فرم
+        function resetForm() {
+            document.getElementById('tradeForm').reset();
+            document.getElementById('type').value = '';
+            document.getElementById('feeDetails').style.display = 'none';
+        }
+        
+        // محاسبه ریسک معامله با کارمزد صحیح - کارمزد بخشی از ریسک است
+        function calculateRisk() {
+            const entryPriceStr = document.getElementById('entryPrice').value.trim();
+            const stopLossStr = document.getElementById('stopLoss').value.trim();
+            const takeProfitStr = document.getElementById('takeProfit').value.trim();
+            const riskPercentStr = document.getElementById('riskPercent').value.trim();
+            const feePercentStr = document.getElementById('feePercent').value.trim();
+            const type = document.getElementById('type').value;
+            
+            // تبدیل به عدد برای محاسبات
+            const entryPrice = parseFloat(entryPriceStr) || 0;
+            const stopLoss = parseFloat(stopLossStr) || 0;
+            const takeProfit = parseFloat(takeProfitStr) || 0;
+            const riskPercent = parseFloat(riskPercentStr) || 0;
+            const feePercent = parseFloat(feePercentStr) || 0;
+            
+            if (entryPrice <= 0 || stopLoss <= 0 || takeProfit <= 0 || riskPercent <= 0) {
+                document.getElementById('feeDetails').style.display = 'none';
+                document.getElementById('riskAmount').textContent = '$0';
+                document.getElementById('potentialProfit').textContent = '$0';
+                document.getElementById('riskRewardRatio').textContent = '1:0';
+                return;
+            }
+            
+            // 1. محاسبه مقدار ریسک دلاری کل (شامل کارمزد)
+            const totalRiskAmount = (accountBalance * riskPercent) / 100;
+            
+            // 2. محاسبه فاصله حد ضرر (نقطه)
+            let stopLossPoints;
+            let takeProfitPoints;
+            
+            if (type === 'buy') {
+                stopLossPoints = Math.abs(entryPrice - stopLoss);
+                takeProfitPoints = Math.abs(takeProfit - entryPrice);
+            } else {
+                stopLossPoints = Math.abs(stopLoss - entryPrice);
+                takeProfitPoints = Math.abs(entryPrice - takeProfit);
+            }
+            
+            if (stopLossPoints <= 0) {
+                document.getElementById('feeDetails').style.display = 'none';
+                return;
+            }
+            
+            // 3. محاسبه اندازه پوزیشن با در نظر گرفتن کارمزد به عنوان بخشی از ریسک
+            // فرمول: totalRiskAmount = (stopLossPoints * positionSize) + (2 * positionSize * entryPrice * feePercent/100)
+            // positionSize = totalRiskAmount / (stopLossPoints + (2 * entryPrice * feePercent/100))
+            
+            const feePerUnit = (2 * entryPrice * feePercent) / 100; // کارمزد ورود و خروج به ازای هر واحد
+            const denominator = stopLossPoints + feePerUnit;
+            const positionSize = denominator > 0 ? totalRiskAmount / denominator : 0;
+            
+            // 4. محاسبه ارزش پوزیشن (حجم دلاری)
+            const positionValue = positionSize * entryPrice;
+            
+            // 5. محاسبه کارمزد ورود و خروج (بر اساس ارزش پوزیشن)
+            const feeEntry = (positionValue * feePercent) / 100;
+            const feeExit = (positionValue * feePercent) / 100;
+            const totalFee = feeEntry + feeExit;
+            
+            // 6. محاسبه سود بالقوه
+            const potentialProfit = positionSize * takeProfitPoints;
+            
+            // 7. محاسبه سود خالص پس از کسر کارمزد
+            const netProfit = potentialProfit - totalFee;
+            
+            // 8. محاسبه نسبت ریسک به ریوارد
+            const riskRewardRatio = stopLossPoints > 0 ? (takeProfitPoints / stopLossPoints).toFixed(2) : 0;
+            
+            // نمایش نتایج - فقط مقدار ریسک کل (با کارمزد) با رنگ قرمز
+            document.getElementById('riskAmount').textContent = formatCurrency(totalRiskAmount);
+            document.getElementById('riskAmount').style.color = '#ef4444';
+            
+            document.getElementById('potentialProfit').textContent = formatCurrency(potentialProfit);
+            document.getElementById('riskRewardRatio').textContent = '1:' + riskRewardRatio;
+            
+            // نمایش جزئیات کارمزد
+            document.getElementById('feeEntryAmount').textContent = formatCurrency(feeEntry);
+            document.getElementById('feeExitAmount').textContent = formatCurrency(feeExit);
+            document.getElementById('totalFeeAmount').textContent = formatCurrency(totalFee);
+            document.getElementById('netProfitAmount').textContent = formatCurrency(netProfit);
+            document.getElementById('feeDetails').style.display = 'block';
+            
+            return {
+                totalRiskAmount: totalRiskAmount,
+                positionSize: positionSize,
+                positionValue: positionValue,
+                potentialProfit: potentialProfit,
+                netProfit: netProfit,
+                riskRewardRatio: riskRewardRatio,
+                feePercent: feePercent,
+                feeEntry: feeEntry,
+                feeExit: feeExit,
+                totalFee: totalFee,
+                entryPriceStr: entryPriceStr,
+                stopLossStr: stopLossStr,
+                takeProfitStr: takeProfitStr
+            };
+        }
+        
+        // ثبت معامله جدید با کارمزد صحیح
+        document.getElementById('tradeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // دریافت مقادیر
+            const entryPriceStr = document.getElementById('entryPrice').value.trim();
+            const stopLossStr = document.getElementById('stopLoss').value.trim();
+            const takeProfitStr = document.getElementById('takeProfit').value.trim();
+            const riskPercentStr = document.getElementById('riskPercent').value.trim();
+            const feePercentStr = document.getElementById('feePercent').value.trim();
+            
+            // تبدیل به عدد برای اعتبارسنجی
+            const entryPrice = parseFloat(entryPriceStr);
+            const stopLoss = parseFloat(stopLossStr);
+            const takeProfit = parseFloat(takeProfitStr);
+            const riskPercent = parseFloat(riskPercentStr);
+            const feePercent = parseFloat(feePercentStr) || 0;
+            
+            // اعتبارسنجی
+            if (isNaN(entryPrice) || entryPrice <= 0 || 
+                isNaN(stopLoss) || stopLoss <= 0 || 
+                isNaN(takeProfit) || takeProfit <= 0 || 
+                isNaN(riskPercent) || riskPercent <= 0) {
+                showNotification('لطفاً تمام فیلدهای ضروری را به درستی پر کنید.', 'error');
+                return;
+            }
+            
+            // اعتبارسنجی حد ضرر و سود
+            const type = document.getElementById('type').value;
+            if (type === 'buy' && stopLoss >= entryPrice) {
+                showNotification('برای لانگ، حد ضرر باید کمتر از قیمت ورود باشد.', 'error');
+                return;
+            }
+            if (type === 'sell' && stopLoss <= entryPrice) {
+                showNotification('برای شورت، حد ضرر باید بیشتر از قیمت ورود باشد.', 'error');
+                return;
+            }
+            
+            // محاسبه ریسک
+            const riskData = calculateRisk();
+            if (!riskData) {
+                showNotification('خطا در محاسبات ریسک.', 'error');
+                return;
+            }
+            
+            const trade = {
+                id: Date.now(),
+                symbol: document.getElementById('symbol').value.toUpperCase(),
+                date: document.getElementById('date').value,
+                type: type,
+                entryPrice: entryPrice,
+                entryPriceStr: entryPriceStr,
+                stopLoss: stopLoss,
+                stopLossStr: stopLossStr,
+                takeProfit: takeProfit,
+                takeProfitStr: takeProfitStr,
+                riskPercent: riskPercent,
+                feePercent: feePercent,
+                feeEntry: riskData.feeEntry,
+                feeExit: riskData.feeExit,
+                totalFee: riskData.totalFee,
+                status: 'open',
+                closedPrice: null,
+                closedDate: null,
+                totalRiskAmount: riskData.totalRiskAmount,
+                positionSize: riskData.positionSize,
+                positionValue: riskData.positionValue,
+                potentialProfit: riskData.potentialProfit,
+                netProfit: riskData.netProfit,
+                riskRewardRatio: riskData.riskRewardRatio,
+                accountId: activeAccountId
+            };
+            
+            trades.push(trade);
+            saveTrades();
+            loadTrades();
+            updateStats();
+            updateTotalRisk();
+            
+            // پاک کردن فرم
+            this.reset();
+            
+            // تنظیم مجدد تاریخ
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
+            document.getElementById('date').value = localISOTime;
+            document.getElementById('type').value = '';
+            document.getElementById('feeDetails').style.display = 'none';
+            
+            showNotification('معامله با موفقیت ثبت شد!', 'success');
+        });
+        
+        // محاسبه ریسک معامله ذخیره شده
+        function calculateTradeRisk(trade) {
+            let stopLossPoints;
+            
+            if (trade.type === 'buy') {
+                stopLossPoints = Math.abs(trade.entryPrice - trade.stopLoss);
+            } else {
+                stopLossPoints = Math.abs(trade.stopLoss - trade.entryPrice);
+            }
+            
+            const totalRiskAmount = (accountBalance * trade.riskPercent) / 100;
+            const feePerUnit = (2 * trade.entryPrice * (trade.feePercent || 0)) / 100;
+            const denominator = stopLossPoints + feePerUnit;
+            const positionSize = denominator > 0 ? totalRiskAmount / denominator : 0;
+            
+            return {
+                totalRiskAmount: totalRiskAmount,
+                positionSize: positionSize
+            };
+        }
+        
+        // بارگذاری معاملات در جدول
+        function loadTrades() {
+            const tbody = document.getElementById('tradesTableBody');
+            const noTradesMessage = document.getElementById('noTradesMessage');
+            
+            // فقط معاملات حساب فعال را نشان بده
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            
+            if (accountTrades.length === 0) {
+                tbody.innerHTML = '';
+                noTradesMessage.style.display = 'block';
+                return;
+            }
+            
+            noTradesMessage.style.display = 'none';
+            
+            // مرتب‌سازی معاملات (جدیدترین اول)
+            const sortedTrades = [...accountTrades].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            let html = '';
+            sortedTrades.forEach(trade => {
+                const pnl = calculateTradePnL(trade);
+                const pnlClass = pnl > 0 ? 'profit' : (pnl < 0 ? 'loss' : 'neutral');
+                const pnlText = trade.status === 'closed' ? 
+                    (pnl >= 0 ? '+' : '') + formatCurrency(Math.abs(pnl)) : 
+                    'باز';
+                
+                const typeText = trade.type === 'buy' ? 'لانگ' : 'شورت';
+                const statusText = trade.status === 'open' ? 'باز' : 'بسته';
+                const statusClass = trade.status === 'open' ? 'profit' : 'neutral';
+                const feeText = trade.feePercent > 0 ? `${trade.feePercent}%` : '-';
+                
+                const date = new Date(trade.date);
+                const dateText = date.toLocaleDateString('fa-IR') + ' ' + 
+                                date.getHours().toString().padStart(2, '0') + ':' + 
+                                date.getMinutes().toString().padStart(2, '0');
+                
+                html += `
+                <tr>
+                    <td>
+                        <div class="crypto-badge">
+                            <i class="fas fa-coins"></i>
+                            ${trade.symbol}
+                        </div>
+                    </td>
+                    <td>${dateText}</td>
+                    <td>${typeText}</td>
+                    <td class="price-display">${trade.entryPriceStr}</td>
+                    <td class="price-display">${trade.stopLossStr}</td>
+                    <td class="price-display">${trade.takeProfitStr}</td>
+                    <td>${trade.riskPercent.toFixed(2)}%</td>
+                    <td>${feeText}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td><span class="${pnlClass}">${pnlText}</span></td>
+                    <td class="actions">
+                        <button class="btn-icon" onclick="showTradeDetails(${trade.id})" style="background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.3);" title="مشاهده جزئیات">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-icon" onclick="editTrade(${trade.id})" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);" title="ویرایش">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon" onclick="closeTrade(${trade.id})" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);" ${trade.status === 'closed' ? 'disabled' : ''} title="بستن معامله">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                        <button class="btn-icon" onclick="deleteTrade(${trade.id})" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // نمایش جزئیات معامله با کارمزد صحیح
+        function showTradeDetails(tradeId) {
+            const trade = trades.find(t => t.id === tradeId);
+            if (!trade) return;
+            
+            // پر کردن مودال با اطلاعات معامله
+            document.getElementById('detail-symbol').textContent = trade.symbol;
+            document.getElementById('detail-type').textContent = trade.type === 'buy' ? 'لانگ' : 'شورت';
+            
+            // فرمت تاریخ
+            const date = new Date(trade.date);
+            const dateText = date.toLocaleDateString('fa-IR') + ' - ' + 
+                            date.getHours().toString().padStart(2, '0') + ':' + 
+                            date.getMinutes().toString().padStart(2, '0');
+            document.getElementById('detail-date').textContent = dateText;
+            
+            // وضعیت معامله
+            const statusText = trade.status === 'open' ? 'باز' : 'بسته';
+            const statusClass = trade.status === 'open' ? 'profit' : 'neutral';
+            const statusElement = document.getElementById('detail-status');
+            statusElement.textContent = statusText;
+            statusElement.className = 'detail-value ' + statusClass;
+            
+            // قیمت‌ها
+            document.getElementById('detail-entry').textContent = trade.entryPriceStr;
+            document.getElementById('detail-sl').textContent = trade.stopLossStr;
+            document.getElementById('detail-tp').textContent = trade.takeProfitStr;
+            
+            // محاسبات ریسک
+            document.getElementById('detail-risk-percent').textContent = trade.riskPercent.toFixed(2) + '%';
+            
+            // نمایش ریسک کل (با کارمزد) با رنگ قرمز
+            const riskAmountElement = document.getElementById('detail-risk-amount');
+            riskAmountElement.textContent = formatCurrency(trade.totalRiskAmount || 0);
+            riskAmountElement.style.color = '#ef4444';
+            
+            document.getElementById('detail-position-size').textContent = formatNumber(trade.positionSize || 0);
+            document.getElementById('detail-rr').textContent = '1:' + (trade.riskRewardRatio || 0);
+            
+            // کارمزد
+            document.getElementById('detail-fee-entry').textContent = formatCurrency(trade.feeEntry || 0);
+            document.getElementById('detail-fee-exit').textContent = formatCurrency(trade.feeExit || 0);
+            document.getElementById('detail-total-fee').textContent = formatCurrency(trade.totalFee || 0);
+            
+            // اگر معامله بسته شده باشد
+            if (trade.status === 'closed') {
+                document.getElementById('detail-closed-price-container').style.display = 'block';
+                document.getElementById('detail-result-section').style.display = 'block';
+                
+                document.getElementById('detail-closed-price').textContent = trade.closedPrice || '0';
+                
+                const pnl = calculateTradePnL(trade);
+                const pnlElement = document.getElementById('detail-net-pnl');
+                pnlElement.textContent = (pnl >= 0 ? '+' : '') + formatCurrency(Math.abs(pnl));
+                pnlElement.style.color = pnl >= 0 ? '#10b981' : '#ef4444';
+                
+                // محاسبه سود خام
+                let priceDifference;
+                if (trade.type === 'buy') {
+                    priceDifference = trade.closedPrice - trade.entryPrice;
+                } else {
+                    priceDifference = trade.entryPrice - trade.closedPrice;
+                }
+                const grossPnl = trade.positionSize * priceDifference;
+                
+                document.getElementById('detail-gross-pnl').textContent = 
+                    (grossPnl >= 0 ? '+' : '') + formatCurrency(Math.abs(grossPnl));
+                document.getElementById('detail-gross-pnl').style.color = 
+                    grossPnl >= 0 ? '#10b981' : '#ef4444';
+                
+                document.getElementById('detail-fee-deducted').textContent = 
+                    formatCurrency(trade.totalFee || 0);
+                
+                if (trade.closedDate) {
+                    const closedDate = new Date(trade.closedDate);
+                    const closedDateText = closedDate.toLocaleDateString('fa-IR') + ' - ' + 
+                                         closedDate.getHours().toString().padStart(2, '0') + ':' + 
+                                         closedDate.getMinutes().toString().padStart(2, '0');
+                    document.getElementById('detail-closed-date').textContent = closedDateText;
+                }
+            } else {
+                document.getElementById('detail-closed-price-container').style.display = 'none';
+                document.getElementById('detail-result-section').style.display = 'none';
+            }
+            
+            // نمایش مودال
+            document.getElementById('detailsModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // بستن مودال جزئیات معامله
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // محاسبه سود/ضرر یک معامله بسته شده با کارمزد صحیح
+        function calculateTradePnL(trade) {
+            if (trade.status !== 'closed' || !trade.closedPrice) return 0;
+            
+            let priceDifference;
+            
+            if (trade.type === 'buy') {
+                priceDifference = trade.closedPrice - trade.entryPrice;
+            } else {
+                priceDifference = trade.entryPrice - trade.closedPrice;
+            }
+            
+            const grossPnl = trade.positionSize * priceDifference;
+            const netPnl = grossPnl - trade.totalFee;
+            
+            return netPnl;
+        }
+        
+        // محاسبه سود/ضرر کل
+        function calculateTotalPnL() {
+            let total = 0;
+            // فقط معاملات حساب فعال
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            accountTrades.forEach(trade => {
+                total += calculateTradePnL(trade);
+            });
+            return total;
+        }
+        
+        // محاسبه سود کل
+        function calculateTotalProfit() {
+            let total = 0;
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            accountTrades.forEach(trade => {
+                const pnl = calculateTradePnL(trade);
+                if (pnl > 0) {
+                    total += pnl;
+                }
+            });
+            return total;
+        }
+        
+        // محاسبه ضرر کل
+        function calculateTotalLoss() {
+            let total = 0;
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            accountTrades.forEach(trade => {
+                const pnl = calculateTradePnL(trade);
+                if (pnl < 0) {
+                    total += Math.abs(pnl);
+                }
+            });
+            return total;
+        }
+        
+        // محاسبه کل کارمزدها
+        function calculateTotalFees() {
+            let total = 0;
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            accountTrades.forEach(trade => {
+                total += trade.totalFee || 0;
+            });
+            return total;
+        }
+        
+        // به‌روزرسانی آمار
+        function updateStats() {
+            // فقط معاملات حساب فعال
+            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
+            
+            if (accountTrades.length === 0) {
+                resetStats();
+                return;
+            }
+            
+            const closedTrades = accountTrades.filter(t => t.status === 'closed');
+            const openTrades = accountTrades.filter(t => t.status === 'open');
+            const totalTrades = accountTrades.length;
+            
+            // محاسبات آماری
+            let totalPnl = 0;
+            let profitableTrades = 0;
+            let maxProfit = 0;
+            let maxLoss = 0;
+            
+            closedTrades.forEach(trade => {
+                const pnl = calculateTradePnL(trade);
+                totalPnl += pnl;
+                
+                if (pnl > 0) {
+                    profitableTrades++;
+                    if (pnl > maxProfit) maxProfit = pnl;
+                } else if (pnl < maxLoss) {
+                    maxLoss = pnl;
+                }
+            });
+            
+            // محاسبه سود کل و ضرر کل جداگانه
+            const totalProfit = calculateTotalProfit();
+            const totalLoss = calculateTotalLoss();
+            const totalFees = calculateTotalFees();
+            
+            // محاسبه درصدها
+            const winRate = closedTrades.length > 0 ? (profitableTrades / closedTrades.length) * 100 : 0;
+            
+            // به‌روزرسانی نمایش با کلاس‌های جدید
+            document.getElementById('totalTrades').textContent = totalTrades;
+            document.getElementById('openTrades').textContent = openTrades.length;
+            
+            // سود کل
+            const totalProfitElement = document.getElementById('totalProfit');
+            totalProfitElement.textContent = formatCurrency(totalProfit);
+            totalProfitElement.className = totalProfit > 0 ? 'stat-value positive' : 'stat-value neutral-stat';
+            
+            // ضرر کل
+            const totalLossElement = document.getElementById('totalLoss');
+            totalLossElement.textContent = formatCurrency(totalLoss);
+            totalLossElement.className = totalLoss > 0 ? 'stat-value negative' : 'stat-value neutral-stat';
+            
+            // کارمزد کل
+            const totalFeesElement = document.getElementById('totalFees');
+            totalFeesElement.textContent = formatCurrency(totalFees);
+            totalFeesElement.className = 'stat-value fee-stat';
+            
+            document.getElementById('winRate').textContent = winRate.toFixed(1) + '%';
+            document.getElementById('maxProfit').textContent = '+' + formatCurrency(Math.abs(maxProfit));
+            document.getElementById('maxLoss').textContent = formatCurrency(Math.abs(maxLoss));
+        }
+        
+        function resetStats() {
+            document.getElementById('totalTrades').textContent = '0';
+            document.getElementById('openTrades').textContent = '0';
+            document.getElementById('totalProfit').textContent = '$0.00';
+            document.getElementById('totalProfit').className = 'stat-value neutral-stat';
+            document.getElementById('totalLoss').textContent = '$0.00';
+            document.getElementById('totalLoss').className = 'stat-value neutral-stat';
+            document.getElementById('totalFees').textContent = '$0.00';
+            document.getElementById('totalFees').className = 'stat-value fee-stat';
+            document.getElementById('winRate').textContent = '0%';
+            document.getElementById('maxProfit').textContent = '$0.00';
+            document.getElementById('maxLoss').textContent = '$0.00';
+        }
+        
+        // ویرایش معامله
+        function editTrade(id) {
+            const trade = trades.find(t => t.id === id);
+            if (!trade) return;
+            
+            // پر کردن فرم
+            document.getElementById('symbol').value = trade.symbol;
+            document.getElementById('date').value = trade.date;
+            document.getElementById('type').value = trade.type;
+            document.getElementById('entryPrice').value = trade.entryPriceStr;
+            document.getElementById('stopLoss').value = trade.stopLossStr;
+            document.getElementById('takeProfit').value = trade.takeProfitStr;
+            document.getElementById('riskPercent').value = trade.riskPercent;
+            document.getElementById('feePercent').value = trade.feePercent || '';
+            
+            // حذف معامله قدیمی
+            trades = trades.filter(t => t.id !== id);
+            
+            calculateRisk();
+            showNotification('معامله برای ویرایش آماده است.', 'info');
+        }
+        
+        // بستن معامله
+        function closeTrade(id) {
+            const closePrice = prompt('قیمت بسته شدن معامله را وارد کنید:');
+            if (!closePrice || isNaN(parseFloat(closePrice))) {
+                showNotification('قیمت نامعتبر است.', 'error');
+                return;
+            }
+            
+            const tradeIndex = trades.findIndex(t => t.id === id);
+            if (tradeIndex !== -1) {
+                trades[tradeIndex].status = 'closed';
+                trades[tradeIndex].closedPrice = parseFloat(closePrice);
+                trades[tradeIndex].closedDate = new Date().toISOString();
+                
+                saveTrades();
+                loadTrades();
+                updateStats();
+                updateTotalRisk();
+                showNotification('معامله بسته شد.', 'success');
+            }
+        }
+        
+        // حذف معامله
+        function deleteTrade(id) {
+            if (confirm('آیا از حذف این معامله اطمینان دارید؟')) {
+                trades = trades.filter(trade => trade.id !== id);
+                saveTrades();
+                loadTrades();
+                updateStats();
+                updateTotalRisk();
+                showNotification('معامله حذف شد.', 'warning');
+            }
+        }
+        
+        // ذخیره معاملات
+        function saveTrades() {
+            localStorage.setItem('crypto_trades', JSON.stringify(trades));
+        }
+        
+        // ذخیره حساب‌ها
+        function saveAccounts() {
+            localStorage.setItem('crypto_accounts', JSON.stringify(accounts));
+            localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+        }
+        
+        // به‌روزرسانی لیست حساب‌ها در مودال مدیریت حساب
+        function updateAccountsList() {
+            const accountsListContainer = document.getElementById('accountsListContainer');
+            if (!accountsListContainer) return;
+            
+            let html = '';
+            
+            accounts.forEach(account => {
+                const isActive = account.id === activeAccountId;
+                
+                html += `
+                    <div class="account-item ${isActive ? 'active-account' : ''}">
+                        <div class="account-info">
+                            <div class="account-name">${account.name}</div>
+                            <div class="account-balance">${formatCurrency(account.balance)}</div>
+                            ${isActive ? '<div class="active-badge">فعال</div>' : ''}
+                        </div>
+                        <div class="account-actions">
+                            <button class="account-action-btn" onclick="switchAccount(${account.id})" ${isActive ? 'disabled' : ''} title="انتخاب به عنوان حساب فعال">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="account-action-btn delete" onclick="deleteAccount(${account.id})" ${account.id === 1 ? 'disabled' : ''} title="حذف حساب">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            accountsListContainer.innerHTML = html;
+        }
+        
+        // افزودن حساب جدید
+        function addNewAccount() {
+            const newAccountName = document.getElementById('newAccountName').value.trim();
+            const newAccountBalance = parseFloat(document.getElementById('newAccountBalance').value);
+            
+            if (!newAccountName) {
+                showNotification('لطفاً نام حساب را وارد کنید.', 'error');
+                return;
+            }
+            
+            if (isNaN(newAccountBalance) || newAccountBalance <= 0) {
+                showNotification('لطفاً موجودی اولیه معتبر وارد کنید.', 'error');
+                return;
+            }
+            
+            // بررسی اینکه آیا حساب با این نام وجود دارد
+            const existingAccount = accounts.find(acc => acc.name.toLowerCase() === newAccountName.toLowerCase());
+            if (existingAccount) {
+                showNotification('حسابی با این نام از قبل وجود دارد.', 'error');
+                return;
+            }
+            
+            // ایجاد شناسه جدید
+            const newAccountId = accounts.length > 0 ? Math.max(...accounts.map(acc => acc.id)) + 1 : 1;
+            
+            // ایجاد حساب جدید
+            const newAccount = {
+                id: newAccountId,
+                name: newAccountName,
+                balance: newAccountBalance
+            };
+            
+            accounts.push(newAccount);
+            saveAccounts();
+            
+            // پاک کردن فیلدهای ورودی
+            document.getElementById('newAccountName').value = '';
+            document.getElementById('newAccountBalance').value = '1000';
+            
+            // به‌روزرسانی لیست حساب‌ها
+            updateAccountsList();
+            
+            showNotification('حساب جدید با موفقیت اضافه شد.', 'success');
+        }
+        
+        // حذف حساب
+        function deleteAccount(accountId) {
+            if (accountId === 1) {
+                showNotification('حساب اصلی قابل حذف نیست.', 'error');
+                return;
+            }
+            
+            if (accounts.length <= 1) {
+                showNotification('حداقل باید یک حساب وجود داشته باشد.', 'error');
+                return;
+            }
+            
+            if (confirm('آیا از حذف این حساب اطمینان دارید؟ تمام معاملات مربوط به این حساب نیز حذف خواهند شد.')) {
+                // حذف حساب
+                accounts = accounts.filter(acc => acc.id !== accountId);
+                
+                // حذف معاملات مربوط به این حساب
+                trades = trades.filter(trade => trade.accountId !== accountId);
+                
+                // اگر حساب فعال در حال حذف است، به حساب اصلی برو
+                if (accountId === activeAccountId) {
+                    activeAccountId = 1;
+                    activeAccount = accounts.find(acc => acc.id === 1);
+                    accountBalance = activeAccount.balance;
+                }
+                
+                // ذخیره تغییرات
+                saveAccounts();
+                saveTrades();
+                
+                // به‌روزرسانی نمایش
+                updateBalanceDisplay();
+                updateAccountsList();
+                loadTrades();
+                updateStats();
+                updateTotalRisk();
+                
+                showNotification('حساب و معاملات مربوطه حذف شدند.', 'warning');
+            }
+        }
+        
+        // تغییر حساب فعال
+        function switchAccount(accountId) {
+            const newActiveAccount = accounts.find(acc => acc.id === accountId);
+            
+            if (!newActiveAccount) {
+                showNotification('حساب مورد نظر یافت نشد.', 'error');
+                return;
+            }
+            
+            activeAccountId = accountId;
+            activeAccount = newActiveAccount;
+            accountBalance = activeAccount.balance;
+            
+            saveAccounts();
+            
+            // به‌روزرسانی نمایش
+            updateBalanceDisplay();
+            updateAccountsList();
+            loadTrades();
+            updateStats();
+            updateTotalRisk();
+            calculateRisk();
+            
+            showNotification(`حساب "${activeAccount.name}" فعال شد.`, 'success');
+            
+            // بستن مودال مدیریت حساب
+            closeAllModals();
+        }
+        
+        // پشتیبان‌گیری
+        function exportData() {
+            const data = {
+                accounts: accounts,
+                activeAccountId: activeAccountId,
+                trades: trades,
+                exportDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `crypto-journal-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('پشتیبان با موفقیت دانلود شد.', 'success');
+        }
+        
+        // بارگذاری پشتیبان
+        function importData() {
+            const fileInput = document.getElementById('backupFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('لطفاً یک فایل انتخاب کنید.', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('بارگذاری این فایل، اطلاعات فعلی را جایگزین می‌کند. ادامه می‌دهید؟')) {
+                        if (data.accounts && Array.isArray(data.accounts)) {
+                            accounts = data.accounts;
+                        }
+                        
+                        if (data.activeAccountId) {
+                            activeAccountId = data.activeAccountId;
+                            activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+                            accountBalance = activeAccount ? activeAccount.balance : 1500;
+                        }
+                        
+                        if (data.trades && Array.isArray(data.trades)) {
+                            trades = data.trades;
+                        }
+                        
+                        saveAccounts();
+                        saveTrades();
+                        
+                        updateBalanceDisplay();
+                        updateAccountsList();
+                        updateTotalRisk();
+                        loadTrades();
+                        updateStats();
+                        fileInput.value = '';
+                        
+                        showNotification('اطلاعات با موفقیت بارگذاری شدند.', 'success');
+                    }
+                } catch (error) {
+                    showNotification('خطا در خواندن فایل. لطفاً فایل معتبر انتخاب کنید.', 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // نمایش اعلان
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.left = '50%';
+            notification.style.transform = 'translateX(-50%)';
+            notification.style.padding = '12px 20px';
+            notification.style.borderRadius = '8px';
+            notification.style.zIndex = '10000';
+            notification.style.fontWeight = '600';
+            notification.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+            
+            if (type === 'success') {
+                notification.style.backgroundColor = '#10b981';
+                notification.style.color = 'white';
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = '#f59e0b';
+                notification.style.color = '#78350f';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#ef4444';
+                notification.style.color = 'white';
+            } else {
+                notification.style.backgroundColor = '#3b82f6';
+                notification.style.color = 'white';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
