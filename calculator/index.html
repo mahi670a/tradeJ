@@ -486,7 +486,7 @@
                         <i class="fas fa-undo-alt"></i>
                         پاک کردن
                     </button>
-                    <button class="btn btn-success" onclick="window.location.href='./'">
+                    <button class="btn btn-success" onclick="goToJournal()">
                         <i class="fas fa-arrow-right"></i>
                         بازگشت به ژورنال
                     </button>
@@ -661,12 +661,6 @@
         
         // ریست کردن همه مقادیر
         function resetAll() {
-            const fields = ['capital', 'risk', 'fee', 'stop', 'entry', 'rr', 'leverage'];
-            fields.forEach(id => {
-                document.getElementById(id).value = '';
-                localStorage.removeItem('calc_' + id);
-            });
-            
             // تنظیم مقادیر پیش‌فرض
             document.getElementById('capital').value = '2000';
             document.getElementById('risk').value = '10';
@@ -676,7 +670,75 @@
             document.getElementById('rr').value = '3';
             document.getElementById('leverage').value = '5';
             
+            // پاک کردن localStorage
+            const fields = ['capital', 'risk', 'fee', 'stop', 'entry', 'rr', 'leverage'];
+            fields.forEach(id => {
+                localStorage.removeItem('calc_' + id);
+            });
+            
+            // ذخیره مقادیر جدید
+            fields.forEach(id => {
+                localStorage.setItem('calc_' + id, document.getElementById(id).value);
+            });
+            
+            // محاسبه مجدد
             calculate();
+            
+            // نمایش پیام
+            showNotification('مقادیر به حالت پیش‌فرض بازگشتند', 'success');
+        }
+        
+        // تابع بازگشت به ژورنال
+        function goToJournal() {
+            // تلاش برای بازگشت به صفحه اصلی
+            // اگر در پوشه calculator هستیم، یک سطح بالا می‌رویم
+            if (window.location.pathname.includes('/calculator/')) {
+                window.location.href = '../';
+            } else {
+                // اگر فایل مستقیما باز شده، به صفحه اصلی سایت برمی‌گردیم
+                window.location.href = './journal.html'; // یا آدرس اصلی ژورنال
+            }
+        }
+        
+        // نمایش اعلان
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.left = '50%';
+            notification.style.transform = 'translateX(-50%)';
+            notification.style.padding = '12px 20px';
+            notification.style.borderRadius = '8px';
+            notification.style.zIndex = '10000';
+            notification.style.fontWeight = '600';
+            notification.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+            
+            if (type === 'success') {
+                notification.style.backgroundColor = '#10b981';
+                notification.style.color = 'white';
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = '#f59e0b';
+                notification.style.color = '#78350f';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#ef4444';
+                notification.style.color = 'white';
+            } else {
+                notification.style.backgroundColor = '#3b82f6';
+                notification.style.color = 'white';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 3000);
         }
         
         // محاسبه مجدد هنگام تغییر هر ورودی
