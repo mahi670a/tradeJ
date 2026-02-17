@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Journal</title>
+    <title>Crypto Journal - با IndexedDB</title>
 
     <!-- Apple Web App Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -672,11 +672,76 @@
             transform: translateY(-2px);
         }
         
+        /* استایل جدید برای آپلود اسکرین‌شات هم‌شکل با ورودی‌ها */
+        .screenshot-upload-input {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .screenshot-upload-input:hover {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .screenshot-upload-input i {
+            color: #94a3b8;
+        }
+        
+        .screenshot-upload-input span {
+            color: #94a3b8;
+        }
+        
+        /* بخش پیش‌نمایش زیر ورودی‌ها */
+        .screenshot-preview-container {
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        .screenshot-preview-container.active {
+            display: block;
+        }
+        
+        .screenshot-preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            margin-bottom: 5px;
+        }
+        
+        .screenshot-remove-link {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .screenshot-remove-link:hover {
+            text-decoration: underline;
+        }
+        
         .risk-summary-section {
             background: rgba(15, 23, 42, 0.3);
             border-radius: 10px;
             padding: 20px;
             border: 1px solid rgba(71, 85, 105, 0.3);
+            margin-top: 15px;
         }
         
         .risk-summary-title {
@@ -748,77 +813,6 @@
             color: #94a3b8;
             font-size: 0.8rem;
             margin-top: 8px;
-        }
-        
-        .screenshot-section {
-            background: rgba(15, 23, 42, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            margin-top: 15px;
-        }
-        
-        .screenshot-title {
-            color: #60a5fa;
-            font-size: 0.95rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .screenshot-upload {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px dashed #475569;
-            border-radius: 6px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            max-width: 250px;
-            margin: 0 auto;
-        }
-        
-        .screenshot-upload:hover {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-        }
-        
-        .screenshot-upload i {
-            font-size: 1.5rem;
-            color: #94a3b8;
-            margin-bottom: 5px;
-        }
-        
-        .screenshot-upload span {
-            display: block;
-            color: #94a3b8;
-            font-size: 0.8rem;
-        }
-        
-        .screenshot-preview {
-            max-width: 100%;
-            max-height: 100px;
-            border-radius: 4px;
-            margin-top: 8px;
-            display: none;
-        }
-        
-        .screenshot-preview.active {
-            display: block;
-            margin: 8px auto 0;
-        }
-        
-        .screenshot-remove {
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 0.75rem;
-            margin-top: 3px;
-            display: none;
-        }
-        
-        .screenshot-remove.active {
-            display: inline-block;
         }
         
         .form-actions {
@@ -2071,7 +2065,7 @@
                         </div>
                     </div>
                     
-                    <!-- تنظیمات ریسک -->
+                    <!-- تنظیمات ریسک و کارمزد + اسکرین‌شات (هم‌انداز و در یک ردیف) -->
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="riskPercent"><i class="fas fa-percentage"></i> ریسک (% از بالانس)</label>
@@ -2087,26 +2081,28 @@
                             <input type="text" id="feePercent" placeholder="مثال: 0.08" required class="price-display">
                             <div class="fee-info">
                                 <i class="fas fa-info-circle"></i>
-                                کارمزد کل مجموع کارمزد ورود و خروج است
+                                مجموع کارمزد ورود و خروج
+                            </div>
+                        </div>
+                        
+                        <!-- ورودی آپلود اسکرین‌شات با ظاهری مشابه سایر ورودی‌ها -->
+                        <div class="form-group">
+                            <label for="entryScreenshotFile"><i class="fas fa-camera"></i> اسکرین‌شات ورود (اختیاری)</label>
+                            <div class="screenshot-upload-input" id="entryScreenshotUpload" onclick="document.getElementById('entryScreenshotFile').click()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>انتخاب تصویر</span>
+                                <input type="file" id="entryScreenshotFile" accept="image/*" style="display: none;" onchange="previewEntryScreenshot(this)">
                             </div>
                         </div>
                     </div>
                     
-                    <!-- بخش آپلود اسکرین‌شات - فقط ورود با سایز کوچک -->
-                    <div class="screenshot-section">
-                        <div class="screenshot-title">
-                            <i class="fas fa-camera"></i>
-                            اسکرین‌شات ورود (اختیاری)
-                        </div>
-                        
-                        <div class="screenshot-upload" id="entryScreenshotUpload" onclick="document.getElementById('entryScreenshotFile').click()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>انتخاب تصویر</span>
-                            <input type="file" id="entryScreenshotFile" accept="image/*" style="display: none;" onchange="previewEntryScreenshot(this)">
-                            <img id="entryScreenshotPreview" class="screenshot-preview" src="" alt="پیش‌نمایش">
-                            <div>
-                                <span class="screenshot-remove" id="entryScreenshotRemove" onclick="removeEntryScreenshot(event)">حذف</span>
-                            </div>
+                    <!-- پیش‌نمایش اسکرین‌شات (در زیر ردیف بالا) -->
+                    <div id="entryScreenshotPreviewContainer" class="screenshot-preview-container">
+                        <img id="entryScreenshotPreview" class="screenshot-preview-image" src="" alt="پیش‌نمایش">
+                        <div>
+                            <span class="screenshot-remove-link" id="entryScreenshotRemove" onclick="removeEntryScreenshot()">
+                                <i class="fas fa-times"></i> حذف تصویر
+                            </span>
                         </div>
                     </div>
                     
@@ -3159,8 +3155,7 @@
                 reader.onload = function(e) {
                     const preview = document.getElementById('entryScreenshotPreview');
                     preview.src = e.target.result;
-                    preview.classList.add('active');
-                    document.getElementById('entryScreenshotRemove').classList.add('active');
+                    document.getElementById('entryScreenshotPreviewContainer').classList.add('active');
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -3180,11 +3175,10 @@
             }
         }
         
-        function removeEntryScreenshot(event) {
-            event.stopPropagation();
+        function removeEntryScreenshot() {
             document.getElementById('entryScreenshotFile').value = '';
-            document.getElementById('entryScreenshotPreview').classList.remove('active');
-            document.getElementById('entryScreenshotRemove').classList.remove('active');
+            document.getElementById('entryScreenshotPreview').src = '';
+            document.getElementById('entryScreenshotPreviewContainer').classList.remove('active');
         }
         
         function removeCloseScreenshot() {
@@ -3401,7 +3395,7 @@
             document.getElementById('tradeForm').reset();
             document.getElementById('type').value = '';
             document.getElementById('feeDetails').style.display = 'none';
-            removeEntryScreenshot(new Event('click'));
+            removeEntryScreenshot();
         }
         
         function calculateRisk() {
@@ -3518,7 +3512,7 @@
             }
             
             const entryScreenshotPreview = document.getElementById('entryScreenshotPreview');
-            const entryScreenshot = entryScreenshotPreview.classList.contains('active') ? entryScreenshotPreview.src : null;
+            const entryScreenshot = entryScreenshotPreview.src ? entryScreenshotPreview.src : null;
             
             const trade = {
                 id: Date.now(),
@@ -3574,7 +3568,7 @@
             document.getElementById('type').value = '';
             document.getElementById('feeDetails').style.display = 'none';
             
-            removeEntryScreenshot(new Event('click'));
+            removeEntryScreenshot();
             
             showNotification('معامله با موفقیت ثبت شد!', 'success');
         });
