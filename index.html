@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Journal - پشتیبان خودکار ماهانه</title>
+    <title>Crypto Journal - با IndexedDB</title>
 
     <!-- Apple Web App Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2358,27 +2358,556 @@
 
     <script>
         // ============================
-        // بخش مدیریت ژورنال تریدینگ
+        // بخش مدیریت ژورنال تریدینگ با IndexedDB
         // ============================
         
-        // مدیریت داده‌ها
-        let accounts = JSON.parse(localStorage.getItem('crypto_accounts')) || [
-            { id: 1, name: 'حساب اصلی', balance: 1500 }
-        ];
-        
-        let activeAccountId = parseInt(localStorage.getItem('crypto_active_account_id')) || 1;
-        let activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
-        let accountBalance = activeAccount ? activeAccount.balance : 1500;
-        
-        let trades = JSON.parse(localStorage.getItem('crypto_trades')) || [];
+        // ==============================================
+        // کلاس مدیریت IndexedDB - ذخیره‌سازی نامحدود
+        // ==============================================
+        class TradingJournalDB {
+            constructor() {
+                this.dbName = 'CryptoJournal';
+                this.version = 1;
+                this.db = null;
+                this.isReady = false;
+            }
+
+            // باز کردن دیتابیس
+            async open() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+
+                    request.onerror = () => {
+                        console.error('خطا در باز کردن دیتابیس:', request.error);
+                        reject(request.error);
+                    };
+                    
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        this.isReady = true;
+                        console.log('✅ دیتابیس IndexedDB با موفقیت باز شد');
+                        resolve(this.db);
+                    };
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        
+                        // ایجاد ObjectStore برای معاملات
+                        if (!db.objectStoreNames.contains('trades')) {
+                            const tradeStore = db.createObjectStore('trades', { keyPath: 'id' });
+                            tradeStore.createIndex('accountId', 'accountId', { unique: false });
+                            tradeStore.createIndex('date', 'date', { unique: false });
+                            tradeStore.createIndex('status', 'status', { unique: false });
+                            tradeStore.createIndex('symbol', 'symbol', { unique: false });
+                            console.log('✅ جدول trades در IndexedDB ایجاد شد');
+                        }
+                        
+                        // ایجاد ObjectStore برای حساب‌ها
+                        if (!db.objectStoreNames.contains('accounts')) {
+                            const accountStore = db.createObjectStore('accounts', { keyPath: 'id' });
+                            console.log('✅ جدول accounts در IndexedDB ایجاد شد');
+                        }
+                        
+                        // ایجاد ObjectStore برای تنظیمات
+                        if (!db.objectStoreNames.contains('settings')) {
+                            const settingsStore = db.createObjectStore('settings', { keyPath: 'key' });
+                            console.log('✅ جدول settings در IndexedDB ایجاد شد');
+                        }
+                    };
+                });
+            }
+
+            // ========== توابع مربوط به معاملات ==========
+            
+            // ذخیره یک معامله
+            async saveTrade(trade) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readwrite');
+                    const store = transaction.objectStore('trades');
+                    
+                    const request = store.put(trade);
+                    request.onsuccess = () => resolve(trade.id);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ذخیره چند معامله
+            async saveTrades(tradesArray) {
+                this.checkReady();
+                const transaction = this.db.transaction(['trades'], 'readwrite');
+                const store = transaction.objectStore('trades');
+                
+                return Promise.all(tradesArray.map(trade => {
+                    return new Promise((resolve, reject) => {
+                        const request = store.put(trade);
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                }));
+            }
+
+            // دریافت همه معاملات یک حساب
+            async getTradesByAccount(accountId) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readonly');
+                    const store = transaction.objectStore('trades');
+                    const index = store.index('accountId');
+                    
+                    const request = index.getAll(parseInt(accountId));
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // دریافت همه معاملات (بدون فیلتر)
+            async getAllTrades() {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readonly');
+                    const store = transaction.objectStore('trades');
+                    
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // دریافت معاملات یک ماه خاص
+            async getTradesByMonth(year, month, accountId) {
+                this.checkReady();
+                const startDate = new Date(year, month, 1).toISOString();
+                const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+                
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readonly');
+                    const store = transaction.objectStore('trades');
+                    const dateIndex = store.index('date');
+                    
+                    const range = IDBKeyRange.bound(startDate, endDate);
+                    const request = dateIndex.getAll(range);
+                    
+                    request.onsuccess = () => {
+                        const trades = request.result.filter(t => t.accountId === accountId);
+                        resolve(trades);
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // دریافت یک معامله با ID
+            async getTradeById(tradeId) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readonly');
+                    const store = transaction.objectStore('trades');
+                    
+                    const request = store.get(parseInt(tradeId));
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // حذف یک معامله
+            async deleteTrade(tradeId) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['trades'], 'readwrite');
+                    const store = transaction.objectStore('trades');
+                    
+                    const request = store.delete(parseInt(tradeId));
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // حذف چند معامله
+            async deleteTrades(tradeIds) {
+                this.checkReady();
+                const transaction = this.db.transaction(['trades'], 'readwrite');
+                const store = transaction.objectStore('trades');
+                
+                return Promise.all(tradeIds.map(id => {
+                    return new Promise((resolve, reject) => {
+                        const request = store.delete(parseInt(id));
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                }));
+            }
+
+            // ========== توابع مربوط به حساب‌ها ==========
+
+            // ذخیره حساب‌ها
+            async saveAccounts(accountsArray) {
+                this.checkReady();
+                const transaction = this.db.transaction(['accounts'], 'readwrite');
+                const store = transaction.objectStore('accounts');
+                
+                return Promise.all(accountsArray.map(account => {
+                    return new Promise((resolve, reject) => {
+                        const request = store.put(account);
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                }));
+            }
+
+            // دریافت همه حساب‌ها
+            async getAccounts() {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['accounts'], 'readonly');
+                    const store = transaction.objectStore('accounts');
+                    
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // دریافت یک حساب با ID
+            async getAccountById(accountId) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['accounts'], 'readonly');
+                    const store = transaction.objectStore('accounts');
+                    
+                    const request = store.get(parseInt(accountId));
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // حذف یک حساب
+            async deleteAccount(accountId) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['accounts'], 'readwrite');
+                    const store = transaction.objectStore('accounts');
+                    
+                    const request = store.delete(parseInt(accountId));
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ========== توابع مربوط به تنظیمات ==========
+
+            // ذخیره تنظیمات
+            async saveSetting(key, value) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['settings'], 'readwrite');
+                    const store = transaction.objectStore('settings');
+                    
+                    const request = store.put({ key, value });
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // دریافت تنظیمات
+            async getSetting(key) {
+                this.checkReady();
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['settings'], 'readonly');
+                    const store = transaction.objectStore('settings');
+                    
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result?.value);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ========== توابع کمکی ==========
+
+            checkReady() {
+                if (!this.isReady || !this.db) {
+                    throw new Error('دیتابیس آماده نیست. ابتدا open() را فراخوانی کنید');
+                }
+            }
+
+            // پشتیبان‌گیری از تمام داده‌ها
+            async backup() {
+                const accounts = await this.getAccounts();
+                const trades = await this.getAllTrades();
+                
+                return {
+                    accounts,
+                    trades,
+                    exportDate: new Date().toISOString(),
+                    version: '3.0'
+                };
+            }
+
+            // بازیابی از پشتیبان
+            async restore(backupData) {
+                if (backupData.accounts && Array.isArray(backupData.accounts)) {
+                    await this.saveAccounts(backupData.accounts);
+                }
+                if (backupData.trades && Array.isArray(backupData.trades)) {
+                    await this.saveTrades(backupData.trades);
+                }
+            }
+
+            // پاک کردن همه داده‌ها
+            async clearAll() {
+                this.checkReady();
+                
+                const clearStore = (storeName) => {
+                    return new Promise((resolve, reject) => {
+                        const transaction = this.db.transaction([storeName], 'readwrite');
+                        const store = transaction.objectStore(storeName);
+                        const request = store.clear();
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                };
+
+                await Promise.all([
+                    clearStore('trades'),
+                    clearStore('accounts'),
+                    clearStore('settings')
+                ]);
+            }
+
+            // دریافت آمار دیتابیس
+            async getStats() {
+                this.checkReady();
+                
+                const getCount = (storeName) => {
+                    return new Promise((resolve, reject) => {
+                        const transaction = this.db.transaction([storeName], 'readonly');
+                        const store = transaction.objectStore(storeName);
+                        const request = store.count();
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    });
+                };
+
+                const [tradeCount, accountCount] = await Promise.all([
+                    getCount('trades'),
+                    getCount('accounts')
+                ]);
+
+                return {
+                    tradeCount,
+                    accountCount,
+                    dbName: this.dbName,
+                    version: this.version
+                };
+            }
+        }
+
+        // ============================
+        // نمونه اصلی دیتابیس
+        // ============================
+        const db = new TradingJournalDB();
+
+        // ============================
+        // متغیرهای سراسری
+        // ============================
+        let accounts = [];
+        let activeAccountId = 1;
+        let activeAccount = null;
+        let accountBalance = 1500;
+        let trades = [];
         
         // متغیرهای مربوط به داشبورد ماهانه
         let currentMonth = new Date();
         let currentTradeIdForClose = null;
         let closeScreenshotData = null;
-        
+
         // ============================
-        // سیستم پشتیبان‌گیری خودکار ماهانه
+        // توابع اولیه‌سازی
+        // ============================
+        
+        // راه‌اندازی اولیه
+        async function initialize() {
+            try {
+                // ۱. باز کردن دیتابیس IndexedDB
+                await db.open();
+                console.log('✅ دیتابیس IndexedDB آماده است');
+                
+                // ۲. بارگذاری حساب‌ها از IndexedDB
+                await loadAccountsFromDB();
+                
+                // ۳. بارگذاری معاملات از IndexedDB
+                await loadTradesFromDB();
+                
+                // ۴. به‌روزرسانی نمایش
+                updateBalanceDisplay();
+                updateTotalRisk();
+                updateStats();
+                updateMonthlyDashboard();
+                
+                // ۵. تنظیم ماه اولیه
+                setInitialMonthBasedOnFirstTrade();
+                
+                console.log('✅ برنامه با موفقیت راه‌اندازی شد');
+            } catch (error) {
+                console.error('❌ خطا در راه‌اندازی:', error);
+                showNotification('خطا در راه‌اندازی دیتابیس', 'error');
+                
+                // fallback به localStorage
+                loadFromLocalStorageFallback();
+            }
+        }
+
+        // بارگذاری حساب‌ها از دیتابیس
+        async function loadAccountsFromDB() {
+            try {
+                const dbAccounts = await db.getAccounts();
+                
+                if (dbAccounts && dbAccounts.length > 0) {
+                    accounts = dbAccounts;
+                } else {
+                    // اگر حسابی نبود، حساب پیش‌فرض ایجاد کن
+                    accounts = [
+                        { id: 1, name: 'حساب اصلی', balance: 1500 }
+                    ];
+                    await db.saveAccounts(accounts);
+                }
+                
+                // تنظیم حساب فعال
+                const savedActiveId = await db.getSetting('activeAccountId');
+                activeAccountId = savedActiveId ? parseInt(savedActiveId) : 1;
+                activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+                accountBalance = activeAccount ? activeAccount.balance : 1500;
+                
+                // همچنین در localStorage برای سازگاری با کدهای قبلی
+                localStorage.setItem('crypto_accounts', JSON.stringify(accounts));
+                localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+                
+            } catch (error) {
+                console.error('خطا در بارگذاری حساب‌ها:', error);
+                // fallback به localStorage
+                accounts = JSON.parse(localStorage.getItem('crypto_accounts')) || [
+                    { id: 1, name: 'حساب اصلی', balance: 1500 }
+                ];
+                activeAccountId = parseInt(localStorage.getItem('crypto_active_account_id')) || 1;
+                activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+                accountBalance = activeAccount ? activeAccount.balance : 1500;
+            }
+        }
+
+        // بارگذاری معاملات از دیتابیس
+        async function loadTradesFromDB() {
+            try {
+                trades = await db.getTradesByAccount(activeAccountId);
+                
+                // همچنین در localStorage برای سازگاری با کدهای قبلی
+                // اما فقط ۵۰ معامله آخر را ذخیره کن تا حجم کم بیاد
+                const recentTrades = trades.slice(0, 50);
+                localStorage.setItem('crypto_trades', JSON.stringify(recentTrades));
+                
+                // نمایش در جدول
+                loadTrades();
+                
+            } catch (error) {
+                console.error('خطا در بارگذاری معاملات:', error);
+                // fallback به localStorage
+                trades = JSON.parse(localStorage.getItem('crypto_trades')) || [];
+                loadTrades();
+            }
+        }
+
+        // ذخیره معامله جدید
+        async function saveTradeToDB(trade) {
+            try {
+                await db.saveTrade(trade);
+                
+                // به‌روزرسانی متغیر محلی
+                trades = await db.getTradesByAccount(activeAccountId);
+                
+                // ذخیره در localStorage (فقط ۵۰ معامله آخر)
+                const recentTrades = trades.slice(0, 50);
+                localStorage.setItem('crypto_trades', JSON.stringify(recentTrades));
+                
+                return true;
+            } catch (error) {
+                console.error('خطا در ذخیره معامله:', error);
+                
+                // fallback به localStorage
+                trades.push(trade);
+                localStorage.setItem('crypto_trades', JSON.stringify(trades));
+                
+                return false;
+            }
+        }
+
+        // حذف معامله
+        async function deleteTradeFromDB(tradeId) {
+            try {
+                await db.deleteTrade(tradeId);
+                
+                // به‌روزرسانی متغیر محلی
+                trades = await db.getTradesByAccount(activeAccountId);
+                
+                // به‌روزرسانی localStorage
+                const recentTrades = trades.slice(0, 50);
+                localStorage.setItem('crypto_trades', JSON.stringify(recentTrades));
+                
+                return true;
+            } catch (error) {
+                console.error('خطا در حذف معامله:', error);
+                
+                // fallback به localStorage
+                trades = trades.filter(t => t.id !== tradeId);
+                localStorage.setItem('crypto_trades', JSON.stringify(trades));
+                
+                return false;
+            }
+        }
+
+        // ذخیره حساب‌ها
+        async function saveAccountsToDB() {
+            try {
+                await db.saveAccounts(accounts);
+                await db.saveSetting('activeAccountId', activeAccountId.toString());
+                
+                // همچنین در localStorage
+                localStorage.setItem('crypto_accounts', JSON.stringify(accounts));
+                localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+                
+                return true;
+            } catch (error) {
+                console.error('خطا در ذخیره حساب‌ها:', error);
+                
+                // fallback به localStorage
+                localStorage.setItem('crypto_accounts', JSON.stringify(accounts));
+                localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+                
+                return false;
+            }
+        }
+
+        // fallback به localStorage
+        function loadFromLocalStorageFallback() {
+            console.warn('⚠️ استفاده از localStorage به عنوان fallback');
+            
+            accounts = JSON.parse(localStorage.getItem('crypto_accounts')) || [
+                { id: 1, name: 'حساب اصلی', balance: 1500 }
+            ];
+            
+            activeAccountId = parseInt(localStorage.getItem('crypto_active_account_id')) || 1;
+            activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+            accountBalance = activeAccount ? activeAccount.balance : 1500;
+            
+            trades = JSON.parse(localStorage.getItem('crypto_trades')) || [];
+            
+            updateBalanceDisplay();
+            updateTotalRisk();
+            loadTrades();
+            updateStats();
+            updateMonthlyDashboard();
+            setInitialMonthBasedOnFirstTrade();
+        }
+
+        // ============================
+        // توابع قبلی (با تغییرات کوچک)
         // ============================
         
         // نام ماه‌های شمسی
@@ -2404,68 +2933,55 @@
             }).formatToParts(now);
             
             const day = parseInt(persianDate.find(p => p.type === 'day').value);
-            return day === 1; // اولین روز ماه شمسی
+            return day === 1;
         }
         
         // تابع ذخیره پشتیبان ماهانه
-        function createMonthlyBackup() {
-            // بررسی اینکه امروز اولین روز ماه هست یا نه
-            if (!isFirstDayOfPersianMonth()) {
-                return; // اگر اول ماه نیست، پشتیبان نگیر
-            }
+        async function createMonthlyBackup() {
+            if (!isFirstDayOfPersianMonth()) return;
             
-            // بررسی اینکه آیا امروز قبلاً پشتیبان گرفته شده
             const today = new Date().toISOString().split('T')[0];
             const lastBackupDate = localStorage.getItem('lastMonthlyBackup');
             
-            if (lastBackupDate === today) {
-                console.log('✅ امروز قبلاً پشتیبان گرفته شده');
-                return; // امروز قبلاً پشتیبان گرفته شده
-            }
+            if (lastBackupDate === today) return;
             
-            // نمایش پیام
             showBackupReminder('در حال تهیه پشتیبان ماهانه...');
             
-            // آماده‌سازی داده‌ها
-            const now = new Date();
-            const persianMonth = getPersianMonthName(now);
-            const fileName = `crypto-journal-${persianMonth.replace(/ /g, '-')}.json`;
-            
-            const data = {
-                accounts: accounts,
-                activeAccountId: activeAccountId,
-                trades: trades,
-                exportDate: now.toISOString(),
-                version: '2.0',
-                backupType: 'monthly',
-                persianMonth: persianMonth
-            };
-            
-            // ایجاد فایل و دانلود خودکار
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // ذخیره تاریخ آخرین پشتیبان
-            localStorage.setItem('lastMonthlyBackup', today);
-            
-            // به‌روزرسانی پیام
-            updateBackupReminder(`✅ پشتیبان ماه ${persianMonth} با موفقیت ذخیره شد`);
-            
-            // مخفی کردن پیام بعد از ۵ ثانیه
-            setTimeout(() => {
-                hideBackupReminder();
-            }, 5000);
-            
-            console.log(`✅ پشتیبان ماهانه با نام ${fileName} ذخیره شد`);
+            try {
+                // گرفتن پشتیبان از IndexedDB
+                const backupData = await db.backup();
+                
+                const now = new Date();
+                const persianMonth = getPersianMonthName(now);
+                const fileName = `crypto-journal-${persianMonth.replace(/ /g, '-')}.json`;
+                
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                localStorage.setItem('lastMonthlyBackup', today);
+                
+                updateBackupReminder(`✅ پشتیبان ماه ${persianMonth} با موفقیت ذخیره شد`);
+                
+                setTimeout(() => {
+                    hideBackupReminder();
+                }, 5000);
+                
+                console.log(`✅ پشتیبان ماهانه با نام ${fileName} ذخیره شد`);
+                
+            } catch (error) {
+                console.error('خطا در پشتیبان‌گیری:', error);
+                updateBackupReminder('❌ خطا در پشتیبان‌گیری');
+                setTimeout(() => hideBackupReminder(), 3000);
+            }
         }
         
         // نمایش المان یادآور
@@ -2476,39 +2992,25 @@
             reminder.classList.add('show');
         }
         
-        // به‌روزرسانی متن یادآور
         function updateBackupReminder(message) {
             const text = document.getElementById('backupReminderText');
             text.textContent = message;
         }
         
-        // مخفی کردن یادآور
         function hideBackupReminder() {
             document.getElementById('backupReminder').classList.remove('show');
         }
         
-        // بررسی پشتیبان‌گیری در هر بار لود صفحه
         function checkMonthlyBackup() {
             createMonthlyBackup();
         }
         
-        // تنظیم بازبینی دوره‌ای (هر ساعت یکبار)
         function startBackupScheduler() {
-            // بررسی اولیه
             checkMonthlyBackup();
-            
-            // بررسی هر ساعت (۳۶۰۰۰۰۰ میلی‌ثانیه)
             setInterval(() => {
                 checkMonthlyBackup();
-            }, 60 * 60 * 1000); // هر ساعت
+            }, 60 * 60 * 1000);
         }
-        
-        // ============================
-        // توابع قبلی (دقیقاً مثل قبل)
-        // ============================
-        
-        // تبدیل تاریخ میلادی به شمسی برای نام ماه (همان تابع قبلی)
-        // (این تابع قبلاً تعریف شده، اینجا فقط برای رفع ابهام ذکر می‌کنم)
         
         // بارگذاری اولیه
         document.addEventListener('DOMContentLoaded', function() {
@@ -2518,17 +3020,8 @@
             const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
             document.getElementById('date').value = localISOTime;
             
-            // تنظیم ماه فعلی بر اساس اولین معامله اگر وجود داشته باشد
-            setInitialMonthBasedOnFirstTrade();
-            
-            // نمایش بالانس و ریسک
-            updateBalanceDisplay();
-            updateTotalRisk();
-            
-            // بارگذاری معاملات
-            loadTrades();
-            updateStats();
-            updateMonthlyDashboard();
+            // راه‌اندازی برنامه با IndexedDB
+            initialize();
             
             // محاسبه ریسک هنگام تغییر ورودی‌ها
             document.getElementById('entryPrice').addEventListener('input', calculateRisk);
@@ -2543,10 +3036,7 @@
             window.addEventListener('resize', adjustScale);
             window.addEventListener('load', adjustScale);
             
-            // بارگذاری لیست حساب‌ها
-            updateAccountsList();
-            
-            // رویداد تغییر ورودی بالانس
+            // رویدادهای ورودی
             document.getElementById('newBalanceInput').addEventListener('input', function() {
                 const value = parseFloat(this.value);
                 if (!isNaN(value) && value > 0) {
@@ -2554,7 +3044,6 @@
                 }
             });
             
-            // رویداد تغییر ورودی حساب جدید
             document.getElementById('newAccountBalance').addEventListener('input', function() {
                 const value = parseFloat(this.value);
                 if (!isNaN(value) && value > 0) {
@@ -2562,7 +3051,7 @@
                 }
             });
             
-            // بستن مودال جزئیات با کلیک روی پس‌زمینه
+            // بستن مودال‌ها با کلیک روی پس‌زمینه
             const detailsModal = document.getElementById('detailsModal');
             if (detailsModal) {
                 detailsModal.addEventListener('click', function(e) {
@@ -2572,7 +3061,6 @@
                 });
             }
             
-            // بستن مودال بستن معامله با کلیک روی پس‌زمینه
             const closeModal = document.getElementById('closeTradeModal');
             if (closeModal) {
                 closeModal.addEventListener('click', function(e) {
@@ -2582,7 +3070,6 @@
                 });
             }
             
-            // بستن مودال تصویر با کلیک روی پس‌زمینه
             const imageModal = document.getElementById('imageModal');
             if (imageModal) {
                 imageModal.addEventListener('click', function(e) {
@@ -2598,12 +3085,11 @@
         
         // تنظیم ماه اولیه بر اساس اولین معامله
         function setInitialMonthBasedOnFirstTrade() {
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            if (accountTrades.length > 0) {
-                // مرتب‌سازی بر اساس تاریخ (قدیمی‌ترین اول)
-                const sortedTrades = [...accountTrades].sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (trades.length > 0) {
+                const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
                 const firstTradeDate = new Date(sortedTrades[0].date);
                 currentMonth = new Date(firstTradeDate.getFullYear(), firstTradeDate.getMonth(), 1);
+                updateMonthlyDashboard();
             }
         }
         
@@ -2628,7 +3114,6 @@
             const modal = document.getElementById(modalId);
             const btn = document.getElementById(modalId.replace('Modal', 'Btn'));
             
-            // اگر مودالی فعال است و با مودال فعلی یکی نیست، آن را ببند
             if (activeModal && activeModal !== modal) {
                 activeModal.classList.remove('active');
                 const activeBtn = document.getElementById(activeModal.id.replace('Modal', 'Btn'));
@@ -2637,7 +3122,6 @@
                 }
             }
             
-            // نمایش یا مخفی کردن مودال فعلی
             if (modal.classList.contains('active')) {
                 modal.classList.remove('active');
                 if (btn) btn.classList.remove('active');
@@ -2647,14 +3131,12 @@
                 if (btn) btn.classList.add('active');
                 activeModal = modal;
                 
-                // مقداردهی اولیه فرم‌ها
                 if (modalId === 'balanceModal') {
                     document.getElementById('newBalanceInput').value = accountBalance;
                 }
             }
         }
         
-        // بستن همه مودال‌ها
         function closeAllModals() {
             const modals = document.querySelectorAll('.modal-box');
             const buttons = document.querySelectorAll('.balance-btn');
@@ -2722,19 +3204,16 @@
             const monthDisplay = document.getElementById('currentMonthDisplay');
             monthDisplay.textContent = getPersianMonthName(currentMonth);
             
-            // فعال/غیرفعال کردن دکمه‌های ماه
             const now = new Date();
             const prevBtn = document.getElementById('prevMonthBtn');
             const nextBtn = document.getElementById('nextMonthBtn');
             
-            // نمی‌توانیم به ماه‌های آینده برویم
             if (currentMonth.getMonth() === now.getMonth() && currentMonth.getFullYear() === now.getFullYear()) {
                 nextBtn.disabled = true;
             } else {
                 nextBtn.disabled = false;
             }
             
-            // فیلتر معاملات ماه جاری
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
             
@@ -2743,7 +3222,6 @@
                 return tradeDate >= startOfMonth && tradeDate <= endOfMonth && trade.accountId === activeAccountId;
             });
             
-            // به‌روزرسانی آمار ماهانه
             document.getElementById('monthlyTradeCount').textContent = monthlyTrades.length;
             
             let totalPnL = 0;
@@ -2766,7 +3244,6 @@
             document.getElementById('monthlyProfitable').textContent = profitable;
             document.getElementById('monthlyLoss').textContent = loss;
             
-            // نمایش معاملات ماهانه
             const tbody = document.getElementById('monthlyTradesBody');
             
             if (monthlyTrades.length === 0) {
@@ -2781,7 +3258,6 @@
                 return;
             }
             
-            // مرتب‌سازی معاملات (جدیدترین اول)
             const sortedTrades = [...monthlyTrades].sort((a, b) => new Date(b.date) - new Date(a.date));
             
             let html = '';
@@ -2822,24 +3298,18 @@
             document.getElementById('newBalanceInput').value = amount;
         }
         
-        // تابع تنظیم مقیاس دینامیک
         function adjustScale() {
             const container = document.querySelector('.container');
             const containerWidth = 1400;
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
             
-            // محاسبه مقیاس بر اساس عرض پنجره
             let scale = windowWidth / containerWidth;
-            
-            // محدود کردن مقیاس بین 0.35 تا 1
             scale = Math.max(0.35, Math.min(1, scale));
             
-            // اعمال transform
             container.style.transform = `scale(${scale})`;
             container.style.transformOrigin = 'top center';
             
-            // محاسبه ارتفاع جدید برای بدنه
             const containerHeight = container.offsetHeight;
             const scaledHeight = containerHeight * scale;
             const minBodyHeight = Math.max(windowHeight, scaledHeight + 40);
@@ -2847,18 +3317,15 @@
             document.body.style.minHeight = `${minBodyHeight}px`;
         }
         
-        // نمایش بالانس در بخش جدید
         function updateBalanceDisplay() {
             document.getElementById('currentBalance').textContent = '$' + formatNumber(accountBalance);
             document.getElementById('currentBalanceDisplay').textContent = '$' + formatNumber(accountBalance);
             document.getElementById('currentAccountName').textContent = activeAccount.name;
             
-            // به‌روزرسانی نشانگر حساب فعال
             const activeAccountIndicator = document.getElementById('activeAccountIndicator');
             activeAccountIndicator.textContent = `${accounts.findIndex(acc => acc.id === activeAccountId) + 1}/${accounts.length}`;
         }
         
-        // فرمت ارز برای سود/ضرر
         function formatCurrency(num) {
             return '$' + parseFloat(num).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
@@ -2866,7 +3333,6 @@
             });
         }
         
-        // فرمت اعداد برای نمایش عمومی
         function formatNumber(num) {
             const numValue = parseFloat(num);
             if (numValue % 1 !== 0) {
@@ -2878,50 +3344,46 @@
             return numValue.toLocaleString('en-US');
         }
         
-        // به‌روزرسانی ریسک کل
         function updateTotalRisk() {
             const openTrades = trades.filter(t => t.status === 'open');
             let totalRiskAmount = 0;
             
             openTrades.forEach(trade => {
                 const riskData = calculateTradeRisk(trade);
-                if (riskData.riskAmount) {
-                    totalRiskAmount += riskData.riskAmount;
+                if (riskData.totalRiskAmount) {
+                    totalRiskAmount += riskData.totalRiskAmount;
                 }
             });
             
             const totalRiskPercent = accountBalance > 0 ? (totalRiskAmount / accountBalance) * 100 : 0;
-            
             document.getElementById('totalRiskPercent').textContent = totalRiskPercent.toFixed(2) + '%';
             
-            // محاسبه سود/ضرر کل
             const totalPnL = calculateTotalPnL();
             const totalPnLElement = document.getElementById('totalPnL');
             totalPnLElement.textContent = (totalPnL >= 0 ? '+' : '') + formatCurrency(Math.abs(totalPnL));
             totalPnLElement.style.color = totalPnL >= 0 ? '#10b981' : '#ef4444';
         }
         
-        // تنظیم درصد ریسک
         function setRiskPercent(percent) {
             document.getElementById('riskPercent').value = percent;
             calculateRisk();
         }
         
-        // به‌روزرسانی بالانس حساب
-        function updateBalance() {
+        async function updateBalance() {
             const newBalanceInput = document.getElementById('newBalanceInput');
             let newBalance = parseFloat(newBalanceInput.value);
             
             newBalance = Math.round(newBalance * 100) / 100;
             
             if (!isNaN(newBalance) && newBalance > 0) {
-                // به‌روزرسانی حساب فعال
                 const activeAccountIndex = accounts.findIndex(acc => acc.id === activeAccountId);
                 if (activeAccountIndex !== -1) {
                     accounts[activeAccountIndex].balance = newBalance;
                     activeAccount = accounts[activeAccountIndex];
                     accountBalance = newBalance;
-                    saveAccounts();
+                    
+                    // ذخیره در دیتابیس
+                    await saveAccountsToDB();
                 }
                 
                 updateBalanceDisplay();
@@ -2935,17 +3397,13 @@
             }
         }
         
-        // پاک کردن فرم
         function resetForm() {
             document.getElementById('tradeForm').reset();
             document.getElementById('type').value = '';
             document.getElementById('feeDetails').style.display = 'none';
-            
-            // پاک کردن پیش‌نمایش اسکرین‌شات
             removeEntryScreenshot(new Event('click'));
         }
         
-        // محاسبه ریسک معامله با کارمزد کل
         function calculateRisk() {
             const entryPriceStr = document.getElementById('entryPrice').value.trim();
             const stopLossStr = document.getElementById('stopLoss').value.trim();
@@ -2954,7 +3412,6 @@
             const feePercentStr = document.getElementById('feePercent').value.trim();
             const type = document.getElementById('type').value;
             
-            // تبدیل به عدد برای محاسبات
             const entryPrice = parseFloat(entryPriceStr) || 0;
             const stopLoss = parseFloat(stopLossStr) || 0;
             const takeProfit = parseFloat(takeProfitStr) || 0;
@@ -2969,12 +3426,9 @@
                 return;
             }
             
-            // محاسبه مقدار ریسک دلاری
             const totalRiskAmount = (accountBalance * riskPercent) / 100;
             
-            // محاسبه فاصله حد ضرر
-            let stopLossPoints;
-            let takeProfitPoints;
+            let stopLossPoints, takeProfitPoints;
             
             if (type === 'buy') {
                 stopLossPoints = Math.abs(entryPrice - stopLoss);
@@ -2989,36 +3443,22 @@
                 return;
             }
             
-            // محاسبه اندازه پوزیشن با در نظر گرفتن کارمزد
             const feePerUnit = (entryPrice * totalFeePercent) / 100;
             const denominator = stopLossPoints + feePerUnit;
             const positionSize = denominator > 0 ? totalRiskAmount / denominator : 0;
-            
-            // محاسبه ارزش پوزیشن
             const positionValue = positionSize * entryPrice;
-            
-            // محاسبه کارمزدها
             const totalFee = (positionValue * totalFeePercent) / 100;
             const feeEntry = totalFee / 2;
             const feeExit = totalFee / 2;
-            
-            // محاسبه سود بالقوه
             const potentialProfit = positionSize * takeProfitPoints;
-            
-            // محاسبه سود خالص
             const netProfit = potentialProfit - totalFee;
-            
-            // محاسبه نسبت ریسک به ریوارد
             const riskRewardRatio = stopLossPoints > 0 ? (takeProfitPoints / stopLossPoints).toFixed(2) : 0;
             
-            // نمایش نتایج
             document.getElementById('riskAmount').textContent = formatCurrency(totalRiskAmount);
             document.getElementById('riskAmount').style.color = '#ef4444';
-            
             document.getElementById('potentialProfit').textContent = formatCurrency(potentialProfit);
             document.getElementById('riskRewardRatio').textContent = '1:' + riskRewardRatio;
             
-            // نمایش جزئیات کارمزد
             document.getElementById('feeEntryAmount').textContent = formatCurrency(feeEntry);
             document.getElementById('feeExitAmount').textContent = formatCurrency(feeExit);
             document.getElementById('totalFeeAmount').textContent = formatCurrency(totalFee);
@@ -3026,41 +3466,28 @@
             document.getElementById('feeDetails').style.display = 'block';
             
             return {
-                totalRiskAmount: totalRiskAmount,
-                positionSize: positionSize,
-                positionValue: positionValue,
-                potentialProfit: potentialProfit,
-                netProfit: netProfit,
-                riskRewardRatio: riskRewardRatio,
-                totalFeePercent: totalFeePercent,
-                feeEntry: feeEntry,
-                feeExit: feeExit,
-                totalFee: totalFee,
-                entryPriceStr: entryPriceStr,
-                stopLossStr: stopLossStr,
-                takeProfitStr: takeProfitStr
+                totalRiskAmount, positionSize, positionValue, potentialProfit, netProfit,
+                riskRewardRatio, totalFeePercent, feeEntry, feeExit, totalFee,
+                entryPriceStr, stopLossStr, takeProfitStr
             };
         }
         
         // ثبت معامله جدید
-        document.getElementById('tradeForm').addEventListener('submit', function(e) {
+        document.getElementById('tradeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // دریافت مقادیر
             const entryPriceStr = document.getElementById('entryPrice').value.trim();
             const stopLossStr = document.getElementById('stopLoss').value.trim();
             const takeProfitStr = document.getElementById('takeProfit').value.trim();
             const riskPercentStr = document.getElementById('riskPercent').value.trim();
             const feePercentStr = document.getElementById('feePercent').value.trim();
             
-            // تبدیل به عدد برای اعتبارسنجی
             const entryPrice = parseFloat(entryPriceStr);
             const stopLoss = parseFloat(stopLossStr);
             const takeProfit = parseFloat(takeProfitStr);
             const riskPercent = parseFloat(riskPercentStr);
             const totalFeePercent = parseFloat(feePercentStr) || 0;
             
-            // اعتبارسنجی
             if (isNaN(entryPrice) || entryPrice <= 0 || 
                 isNaN(stopLoss) || stopLoss <= 0 || 
                 isNaN(takeProfit) || takeProfit <= 0 || 
@@ -3069,7 +3496,6 @@
                 return;
             }
             
-            // اعتبارسنجی حد ضرر و سود
             const type = document.getElementById('type').value;
             if (!type) {
                 showNotification('لطفاً نوع معامله را انتخاب کنید.', 'error');
@@ -3085,14 +3511,12 @@
                 return;
             }
             
-            // محاسبه ریسک
             const riskData = calculateRisk();
             if (!riskData) {
                 showNotification('خطا در محاسبات ریسک.', 'error');
                 return;
             }
             
-            // دریافت اسکرین‌شات ورود
             const entryScreenshotPreview = document.getElementById('entryScreenshotPreview');
             const entryScreenshot = entryScreenshotPreview.classList.contains('active') ? entryScreenshotPreview.src : null;
             
@@ -3126,15 +3550,15 @@
                 accountId: activeAccountId
             };
             
-            trades.push(trade);
-            saveTrades();
+            // ذخیره در IndexedDB
+            await saveTradeToDB(trade);
+            
+            // به‌روزرسانی نمایش
             loadTrades();
             updateStats();
             updateTotalRisk();
             
-            // تنظیم ماه بر اساس اولین معامله اگر این اولین معامله است
-            const accountTrades = trades.filter(t => t.accountId === activeAccountId);
-            if (accountTrades.length === 1) {
+            if (trades.length === 1) {
                 setInitialMonthBasedOnFirstTrade();
             }
             
@@ -3143,7 +3567,6 @@
             // پاک کردن فرم
             this.reset();
             
-            // تنظیم مجدد تاریخ
             const now = new Date();
             const timezoneOffset = now.getTimezoneOffset() * 60000;
             const localISOTime = new Date(now - timezoneOffset).toISOString().slice(0, 16);
@@ -3151,13 +3574,11 @@
             document.getElementById('type').value = '';
             document.getElementById('feeDetails').style.display = 'none';
             
-            // پاک کردن پیش‌نمایش اسکرین‌شات
             removeEntryScreenshot(new Event('click'));
             
             showNotification('معامله با موفقیت ثبت شد!', 'success');
         });
         
-        // محاسبه ریسک معامله ذخیره شده
         function calculateTradeRisk(trade) {
             let stopLossPoints;
             
@@ -3172,18 +3593,13 @@
             const denominator = stopLossPoints + feePerUnit;
             const positionSize = denominator > 0 ? totalRiskAmount / denominator : 0;
             
-            return {
-                totalRiskAmount: totalRiskAmount,
-                positionSize: positionSize
-            };
+            return { totalRiskAmount, positionSize };
         }
         
-        // بارگذاری معاملات در جدول
         function loadTrades() {
             const tbody = document.getElementById('tradesTableBody');
             const noTradesMessage = document.getElementById('noTradesMessage');
             
-            // فقط معاملات حساب فعال را نشان بده
             const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
             
             if (accountTrades.length === 0) {
@@ -3194,7 +3610,6 @@
             
             noTradesMessage.style.display = 'none';
             
-            // مرتب‌سازی معاملات (جدیدترین اول)
             const sortedTrades = [...accountTrades].sort((a, b) => new Date(b.date) - new Date(a.date));
             
             let html = '';
@@ -3215,7 +3630,6 @@
                                 date.getHours().toString().padStart(2, '0') + ':' + 
                                 date.getMinutes().toString().padStart(2, '0');
                 
-                // آیکون اسکرین‌شات
                 const screenshotIcon = trade.entryScreenshot ? 
                     '<i class="fas fa-camera" style="color: #3b82f6; margin-right: 5px;" title="اسکرین‌شات موجود است"></i>' : '';
                 
@@ -3254,15 +3668,13 @@
             tbody.innerHTML = html;
         }
         
-        // نمایش جزئیات معامله
-        function showTradeDetails(tradeId) {
+        async function showTradeDetails(tradeId) {
             const trade = trades.find(t => t.id === tradeId);
             if (!trade) return;
             
             const detailsModal = document.getElementById('detailsModal');
             detailsModal._currentTradeId = tradeId;
             
-            // اطلاعات پایه
             document.getElementById('detail-symbol').textContent = trade.symbol;
             document.getElementById('detail-type').textContent = trade.type === 'buy' ? 'لانگ' : 'شورت';
             
@@ -3278,27 +3690,19 @@
             statusElement.textContent = statusText;
             statusElement.className = 'detail-value ' + statusClass;
             
-            // قیمت‌ها
             document.getElementById('detail-entry').textContent = trade.entryPriceStr;
             document.getElementById('detail-sl').textContent = trade.stopLossStr;
             document.getElementById('detail-tp').textContent = trade.takeProfitStr;
             
-            // محاسبات ریسک
             document.getElementById('detail-risk-percent').textContent = trade.riskPercent.toFixed(2) + '%';
-            
-            const riskAmountElement = document.getElementById('detail-risk-amount');
-            riskAmountElement.textContent = formatCurrency(trade.totalRiskAmount || 0);
-            riskAmountElement.style.color = '#ef4444';
-            
+            document.getElementById('detail-risk-amount').textContent = formatCurrency(trade.totalRiskAmount || 0);
             document.getElementById('detail-position-size').textContent = formatNumber(trade.positionSize || 0);
             document.getElementById('detail-rr').textContent = '1:' + (trade.riskRewardRatio || 0);
             
-            // کارمزد
             document.getElementById('detail-fee-entry').textContent = formatCurrency(trade.feeEntry || 0);
             document.getElementById('detail-fee-exit').textContent = formatCurrency(trade.feeExit || 0);
             document.getElementById('detail-total-fee').textContent = formatCurrency(trade.totalFee || 0);
             
-            // اسکرین‌شات‌ها
             const entryScreenshotImg = document.getElementById('detail-screenshot-entry');
             const entryPlaceholder = document.getElementById('detail-screenshot-entry-placeholder');
             const exitScreenshotImg = document.getElementById('detail-screenshot-exit');
@@ -3322,7 +3726,6 @@
                 exitPlaceholder.style.display = 'block';
             }
             
-            // اگر معامله بسته شده باشد
             if (trade.status === 'closed') {
                 document.getElementById('detail-closed-price-container').style.display = 'block';
                 document.getElementById('detail-result-section').style.display = 'block';
@@ -3334,7 +3737,6 @@
                 pnlElement.textContent = (pnl >= 0 ? '+' : '') + formatCurrency(Math.abs(pnl));
                 pnlElement.style.color = pnl >= 0 ? '#10b981' : '#ef4444';
                 
-                // محاسبه سود خام
                 let priceDifference;
                 if (trade.type === 'buy') {
                     priceDifference = trade.closedPrice - trade.entryPrice;
@@ -3348,8 +3750,7 @@
                 document.getElementById('detail-gross-pnl').style.color = 
                     grossPnl >= 0 ? '#10b981' : '#ef4444';
                 
-                document.getElementById('detail-fee-deducted').textContent = 
-                    formatCurrency(trade.totalFee || 0);
+                document.getElementById('detail-fee-deducted').textContent = formatCurrency(trade.totalFee || 0);
                 
                 if (trade.closedDate) {
                     const closedDate = new Date(trade.closedDate);
@@ -3363,18 +3764,15 @@
                 document.getElementById('detail-result-section').style.display = 'none';
             }
             
-            // نمایش مودال
             detailsModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
-        // بستن مودال جزئیات
         function closeDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
             document.body.style.overflow = 'auto';
         }
         
-        // ویرایش معامله از مودال جزئیات
         function editTradeFromDetails() {
             const modal = document.getElementById('detailsModal');
             if (modal && modal._currentTradeId) {
@@ -3383,7 +3781,6 @@
             }
         }
         
-        // باز کردن مودال بستن معامله
         function openCloseModal(tradeId) {
             currentTradeIdForClose = tradeId;
             document.getElementById('closePriceInput').value = '';
@@ -3392,7 +3789,6 @@
             document.body.style.overflow = 'hidden';
         }
         
-        // بستن مودال بستن معامله
         function closeCloseModal() {
             document.getElementById('closeTradeModal').style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -3400,8 +3796,7 @@
             closeScreenshotData = null;
         }
         
-        // تایید بستن معامله
-        function confirmCloseTrade() {
+        async function confirmCloseTrade() {
             const closePrice = document.getElementById('closePriceInput').value.trim();
             
             if (!closePrice || isNaN(parseFloat(closePrice))) {
@@ -3417,12 +3812,13 @@
                 trades[tradeIndex].closedPrice = parseFloat(closePrice);
                 trades[tradeIndex].closedDate = new Date().toISOString();
                 
-                // اضافه کردن اسکرین‌شات خروج اگر آپلود شده باشد
                 if (closeScreenshotData) {
                     trades[tradeIndex].exitScreenshot = closeScreenshotData;
                 }
                 
-                saveTrades();
+                // ذخیره در دیتابیس
+                await saveTradeToDB(trades[tradeIndex]);
+                
                 loadTrades();
                 updateStats();
                 updateTotalRisk();
@@ -3433,7 +3829,6 @@
             }
         }
         
-        // محاسبه سود/ضرر یک معامله بسته شده
         function calculateTradePnL(trade) {
             if (trade.status !== 'closed' || !trade.closedPrice) return 0;
             
@@ -3451,64 +3846,49 @@
             return netPnl;
         }
         
-        // محاسبه سود/ضرر کل
         function calculateTotalPnL() {
             let total = 0;
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            accountTrades.forEach(trade => {
+            trades.forEach(trade => {
                 total += calculateTradePnL(trade);
             });
             return total;
         }
         
-        // محاسبه سود کل
         function calculateTotalProfit() {
             let total = 0;
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            accountTrades.forEach(trade => {
+            trades.forEach(trade => {
                 const pnl = calculateTradePnL(trade);
-                if (pnl > 0) {
-                    total += pnl;
-                }
+                if (pnl > 0) total += pnl;
             });
             return total;
         }
         
-        // محاسبه ضرر کل
         function calculateTotalLoss() {
             let total = 0;
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            accountTrades.forEach(trade => {
+            trades.forEach(trade => {
                 const pnl = calculateTradePnL(trade);
-                if (pnl < 0) {
-                    total += Math.abs(pnl);
-                }
+                if (pnl < 0) total += Math.abs(pnl);
             });
             return total;
         }
         
-        // محاسبه کل کارمزدها
         function calculateTotalFees() {
             let total = 0;
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            accountTrades.forEach(trade => {
+            trades.forEach(trade => {
                 total += trade.totalFee || 0;
             });
             return total;
         }
         
-        // به‌روزرسانی آمار کلی
         function updateStats() {
-            const accountTrades = trades.filter(trade => trade.accountId === activeAccountId);
-            
-            if (accountTrades.length === 0) {
+            if (trades.length === 0) {
                 resetStats();
                 return;
             }
             
-            const closedTrades = accountTrades.filter(t => t.status === 'closed');
-            const openTrades = accountTrades.filter(t => t.status === 'open');
-            const totalTrades = accountTrades.length;
+            const closedTrades = trades.filter(t => t.status === 'closed');
+            const openTrades = trades.filter(t => t.status === 'open');
+            const totalTrades = trades.length;
             
             let profitableTrades = 0;
             let maxProfit = 0;
@@ -3516,7 +3896,6 @@
             
             closedTrades.forEach(trade => {
                 const pnl = calculateTradePnL(trade);
-                
                 if (pnl > 0) {
                     profitableTrades++;
                     if (pnl > maxProfit) maxProfit = pnl;
@@ -3528,24 +3907,13 @@
             const totalProfit = calculateTotalProfit();
             const totalLoss = calculateTotalLoss();
             const totalFees = calculateTotalFees();
-            
             const winRate = closedTrades.length > 0 ? (profitableTrades / closedTrades.length) * 100 : 0;
             
             document.getElementById('totalTrades').textContent = totalTrades;
             document.getElementById('openTrades').textContent = openTrades.length;
-            
-            const totalProfitElement = document.getElementById('totalProfit');
-            totalProfitElement.textContent = formatCurrency(totalProfit);
-            totalProfitElement.className = totalProfit > 0 ? 'stat-value positive' : 'stat-value neutral-stat';
-            
-            const totalLossElement = document.getElementById('totalLoss');
-            totalLossElement.textContent = formatCurrency(totalLoss);
-            totalLossElement.className = totalLoss > 0 ? 'stat-value negative' : 'stat-value neutral-stat';
-            
-            const totalFeesElement = document.getElementById('totalFees');
-            totalFeesElement.textContent = formatCurrency(totalFees);
-            totalFeesElement.className = 'stat-value fee-stat';
-            
+            document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+            document.getElementById('totalLoss').textContent = formatCurrency(totalLoss);
+            document.getElementById('totalFees').textContent = formatCurrency(totalFees);
             document.getElementById('winRate').textContent = winRate.toFixed(1) + '%';
             document.getElementById('maxProfit').textContent = '+' + formatCurrency(Math.abs(maxProfit));
             document.getElementById('maxLoss').textContent = formatCurrency(Math.abs(maxLoss));
@@ -3555,22 +3923,17 @@
             document.getElementById('totalTrades').textContent = '0';
             document.getElementById('openTrades').textContent = '0';
             document.getElementById('totalProfit').textContent = '$0.00';
-            document.getElementById('totalProfit').className = 'stat-value neutral-stat';
             document.getElementById('totalLoss').textContent = '$0.00';
-            document.getElementById('totalLoss').className = 'stat-value neutral-stat';
             document.getElementById('totalFees').textContent = '$0.00';
-            document.getElementById('totalFees').className = 'stat-value fee-stat';
             document.getElementById('winRate').textContent = '0%';
             document.getElementById('maxProfit').textContent = '$0.00';
             document.getElementById('maxLoss').textContent = '$0.00';
         }
         
-        // ویرایش معامله
-        function editTrade(id) {
+        async function editTrade(id) {
             const trade = trades.find(t => t.id === id);
             if (!trade) return;
             
-            // پر کردن فرم
             document.getElementById('symbol').value = trade.symbol;
             document.getElementById('date').value = trade.date;
             document.getElementById('type').value = trade.type;
@@ -3580,18 +3943,17 @@
             document.getElementById('riskPercent').value = trade.riskPercent;
             document.getElementById('feePercent').value = trade.totalFeePercent || '';
             
-            // حذف معامله قدیمی
-            trades = trades.filter(t => t.id !== id);
+            // حذف از دیتابیس
+            await deleteTradeFromDB(id);
             
             calculateRisk();
             showNotification('معامله برای ویرایش آماده است.', 'info');
         }
         
-        // حذف معامله
-        function deleteTrade(id) {
+        async function deleteTrade(id) {
             if (confirm('آیا از حذف این معامله اطمینان دارید؟')) {
-                trades = trades.filter(trade => trade.id !== id);
-                saveTrades();
+                await deleteTradeFromDB(id);
+                
                 loadTrades();
                 updateStats();
                 updateTotalRisk();
@@ -3600,21 +3962,19 @@
             }
         }
         
-        // ذخیره معاملات
         function saveTrades() {
-            localStorage.setItem('crypto_trades', JSON.stringify(trades));
+            // این تابع دیگر استفاده نمی‌شود
+            // اما برای سازگاری نگه داشته شده
         }
         
-        // ذخیره حساب‌ها
         function saveAccounts() {
-            localStorage.setItem('crypto_accounts', JSON.stringify(accounts));
-            localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+            // این تابع دیگر استفاده نمی‌شود
+            // اما برای سازگاری نگه داشته شده
         }
         
-        // به‌روزرسانی لیست حساب‌ها
         function updateAccountsList() {
-            const accountsListContainer = document.getElementById('accountsListContainer');
-            if (!accountsListContainer) return;
+            const container = document.getElementById('accountsListContainer');
+            if (!container) return;
             
             let html = '';
             
@@ -3640,11 +4000,10 @@
                 `;
             });
             
-            accountsListContainer.innerHTML = html;
+            container.innerHTML = html;
         }
         
-        // افزودن حساب جدید
-        function addNewAccount() {
+        async function addNewAccount() {
             const newAccountName = document.getElementById('newAccountName').value.trim();
             const newAccountBalance = parseFloat(document.getElementById('newAccountBalance').value);
             
@@ -3673,7 +4032,9 @@
             };
             
             accounts.push(newAccount);
-            saveAccounts();
+            
+            // ذخیره در دیتابیس
+            await saveAccountsToDB();
             
             document.getElementById('newAccountName').value = '';
             document.getElementById('newAccountBalance').value = '1000';
@@ -3682,8 +4043,7 @@
             showNotification('حساب جدید با موفقیت اضافه شد.', 'success');
         }
         
-        // حذف حساب
-        function deleteAccount(accountId) {
+        async function deleteAccount(accountId) {
             if (accountId === 1) {
                 showNotification('حساب اصلی قابل حذف نیست.', 'error');
                 return;
@@ -3695,8 +4055,15 @@
             }
             
             if (confirm('آیا از حذف این حساب اطمینان دارید؟ تمام معاملات مربوط به این حساب نیز حذف خواهند شد.')) {
+                // حذف حساب
                 accounts = accounts.filter(acc => acc.id !== accountId);
-                trades = trades.filter(trade => trade.accountId !== accountId);
+                
+                // حذف معاملات مربوط به این حساب
+                const tradesToDelete = trades.filter(t => t.accountId === accountId).map(t => t.id);
+                if (tradesToDelete.length > 0) {
+                    await db.deleteTrades(tradesToDelete);
+                }
+                trades = trades.filter(t => t.accountId !== accountId);
                 
                 if (accountId === activeAccountId) {
                     activeAccountId = 1;
@@ -3704,16 +4071,13 @@
                     accountBalance = activeAccount.balance;
                 }
                 
-                saveAccounts();
-                saveTrades();
+                await saveAccountsToDB();
                 
                 updateBalanceDisplay();
                 updateAccountsList();
                 loadTrades();
                 updateStats();
                 updateTotalRisk();
-                
-                // بازنشانی ماه بر اساس اولین معامله موجود
                 setInitialMonthBasedOnFirstTrade();
                 updateMonthlyDashboard();
                 
@@ -3721,10 +4085,8 @@
             }
         }
         
-        // تغییر حساب فعال
-        function switchAccount(accountId) {
+        async function switchAccount(accountId) {
             const newActiveAccount = accounts.find(acc => acc.id === accountId);
-            
             if (!newActiveAccount) {
                 showNotification('حساب مورد نظر یافت نشد.', 'error');
                 return;
@@ -3734,57 +4096,58 @@
             activeAccount = newActiveAccount;
             accountBalance = activeAccount.balance;
             
-            saveAccounts();
+            await db.saveSetting('activeAccountId', activeAccountId.toString());
+            localStorage.setItem('crypto_active_account_id', activeAccountId.toString());
+            
+            // بارگذاری معاملات حساب جدید
+            trades = await db.getTradesByAccount(activeAccountId);
             
             updateBalanceDisplay();
             updateAccountsList();
             loadTrades();
             updateStats();
             updateTotalRisk();
-            
-            // بازنشانی ماه بر اساس اولین معامله حساب جدید
             setInitialMonthBasedOnFirstTrade();
             updateMonthlyDashboard();
             calculateRisk();
             
             showNotification(`حساب "${activeAccount.name}" فعال شد.`, 'success');
-            
             closeAllModals();
         }
         
-        // پشتیبان‌گیری دستی (همان exportData قبلی)
-        function exportData() {
-            const data = {
-                accounts: accounts,
-                activeAccountId: activeAccountId,
-                trades: trades,
-                exportDate: new Date().toISOString(),
-                version: '2.0'
-            };
-            
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            
-            const now = new Date();
-            const persianDate = new Intl.DateTimeFormat('fa-IR', { 
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            }).format(now).replace(/\//g, '-');
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `crypto-journal-manual-${persianDate}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('پشتیبان با موفقیت دانلود شد.', 'success');
+        // پشتیبان‌گیری دستی
+        async function exportData() {
+            try {
+                const backupData = await db.backup();
+                
+                const now = new Date();
+                const persianDate = new Intl.DateTimeFormat('fa-IR', { 
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).format(now).replace(/\//g, '-');
+                
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `crypto-journal-manual-${persianDate}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showNotification('پشتیبان با موفقیت دانلود شد.', 'success');
+                
+            } catch (error) {
+                console.error('خطا در پشتیبان‌گیری:', error);
+                showNotification('خطا در پشتیبان‌گیری', 'error');
+            }
         }
         
-        // بارگذاری پشتیبان (همان importData قبلی)
-        function importData() {
+        // بارگذاری پشتیبان
+        async function importData() {
             const fileInput = document.getElementById('backupFile');
             const file = fileInput.files[0];
             
@@ -3795,35 +4158,39 @@
             
             const reader = new FileReader();
             
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
                     
                     if (confirm('بارگذاری این فایل، اطلاعات فعلی را جایگزین می‌کند. ادامه می‌دهید؟')) {
+                        // پاک کردن دیتابیس فعلی
+                        await db.clearAll();
+                        
+                        // ذخیره داده‌های جدید
                         if (data.accounts && Array.isArray(data.accounts)) {
+                            await db.saveAccounts(data.accounts);
                             accounts = data.accounts;
                         }
                         
                         if (data.activeAccountId) {
                             activeAccountId = data.activeAccountId;
-                            activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
-                            accountBalance = activeAccount ? activeAccount.balance : 1500;
+                            await db.saveSetting('activeAccountId', activeAccountId.toString());
                         }
                         
                         if (data.trades && Array.isArray(data.trades)) {
+                            await db.saveTrades(data.trades);
                             trades = data.trades;
                         }
                         
-                        saveAccounts();
-                        saveTrades();
+                        // به‌روزرسانی
+                        activeAccount = accounts.find(acc => acc.id === activeAccountId) || accounts[0];
+                        accountBalance = activeAccount ? activeAccount.balance : 1500;
                         
                         updateBalanceDisplay();
                         updateAccountsList();
-                        updateTotalRisk();
                         loadTrades();
                         updateStats();
-                        
-                        // بازنشانی ماه بر اساس اولین معامله
+                        updateTotalRisk();
                         setInitialMonthBasedOnFirstTrade();
                         updateMonthlyDashboard();
                         
@@ -3832,6 +4199,7 @@
                         showNotification('اطلاعات با موفقیت بارگذاری شدند.', 'success');
                     }
                 } catch (error) {
+                    console.error('خطا در خواندن فایل:', error);
                     showNotification('خطا در خواندن فایل. لطفاً فایل معتبر انتخاب کنید.', 'error');
                 }
             };
@@ -3839,7 +4207,6 @@
             reader.readAsText(file);
         }
         
-        // نمایش اعلان
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.textContent = message;
