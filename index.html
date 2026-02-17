@@ -910,28 +910,28 @@
             justify-content: center;
             align-items: center;
             flex-wrap: nowrap;
-            min-width: 200px; /* افزایش عرض مینیمم */
+            min-width: 160px; /* کاهش عرض مینیمم بعد از حذف دکمه ویرایش */
         }
         
         .btn-icon {
-            padding: 8px 12px; /* افزایش پدینگ */
-            border-radius: 8px; /* گردی بیشتر گوشه‌ها */
-            font-size: 0.9rem; /* افزایش سایز فونت */
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
             cursor: pointer;
             border: none;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 36px; /* افزایش ارتفاع */
-            width: 36px; /* افزایش عرض */
+            height: 36px;
+            width: 36px;
             min-width: 36px;
             flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* اضافه کردن سایه */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         
         .btn-icon i {
-            font-size: 1rem; /* افزایش سایز آیکون */
+            font-size: 1rem;
         }
         
         .btn-icon:hover {
@@ -1372,6 +1372,9 @@
             <div class="details-modal-buttons">
                 <button type="button" class="btn-secondary" onclick="closeDetailsModal()" style="flex: 1;">
                     <i class="fas fa-times"></i> بستن
+                </button>
+                <button type="button" class="btn-warning" onclick="editTradeFromDetails()" style="flex: 1;">
+                    <i class="fas fa-edit"></i> ویرایش
                 </button>
             </div>
         </div>
@@ -2307,9 +2310,6 @@
                         <button class="btn-icon" onclick="showTradeDetails(${trade.id})" style="background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.3);" title="مشاهده جزئیات">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn-icon" onclick="editTrade(${trade.id})" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);" title="ویرایش">
-                            <i class="fas fa-edit"></i>
-                        </button>
                         <button class="btn-icon" onclick="closeTrade(${trade.id})" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);" ${trade.status === 'closed' ? 'disabled' : ''} title="بستن معامله">
                             <i class="fas fa-check-circle"></i>
                         </button>
@@ -2328,6 +2328,11 @@
         function showTradeDetails(tradeId) {
             const trade = trades.find(t => t.id === tradeId);
             if (!trade) return;
+            
+            const detailsModal = document.getElementById('detailsModal');
+            
+            // ذخیره آی‌دی معامله در مودال برای استفاده در ویرایش
+            detailsModal._currentTradeId = tradeId;
             
             // پر کردن مودال با اطلاعات معامله
             document.getElementById('detail-symbol').textContent = trade.symbol;
@@ -2418,6 +2423,15 @@
         function closeDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
             document.body.style.overflow = 'auto';
+        }
+        
+        // ویرایش معامله از مودال جزئیات
+        function editTradeFromDetails() {
+            const modal = document.getElementById('detailsModal');
+            if (modal && modal._currentTradeId) {
+                closeDetailsModal();
+                editTrade(modal._currentTradeId);
+            }
         }
         
         // محاسبه سود/ضرر یک معامله بسته شده با کارمزد صحیح
